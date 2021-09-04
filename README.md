@@ -42,6 +42,7 @@ EFS is where the world data and server properties are stored, and persists betwe
 
 ## IAM Round 1
 The IAM Console is where we configure the roles and policies required to give access to the Task running the Minecraft server and the Lambda Function used to start it.
+
 Ultimately we'll need to create:
 - Role for the ECS Fargate Task
 - Role for the Lambda function (Lambda will create this for us and we'll add permissions to it)
@@ -51,6 +52,7 @@ Ultimately we'll need to create:
 
 ### Role Generation
 In the IAM console, create a new role for the ECS Fargate Task.
+
 Call it something useful, like `ecs.task.minecraft-server`.  Three policies must be linked to this role, but we are only ready to create the first one now.
 
 ### EFS Policy
@@ -114,9 +116,13 @@ Create task.
 
 ### Service
 Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only FARGATE_SPOT, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to safe a few pennies, at the extremely low risk of game interruption.
+
 Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this is adjusted later on demand).  Everything else on this page is fine as default. Hit Next.
+
 Select your VPC, and select _all of the subnets that your EFS was created in_ which is probably all of them.  Using all the subnets will also maximize your success of running Fargate Spot tasks.
+
 For Security Group, click edit.  Let it create a new security group.  Change the default HTTP rule to `Custom TCP` and change the port to `25565` from `Anywhere`, which will allow anyone to connect to the server once it is online (they have to know the name of course!)  You could also restrict by known IP addresses but this is cumbersome to update regularly.  Tap save.
+
 Ensure that "Auto-assign public IP" is `ENABLED` (this is default).  Tap `Next`, `Next`, and `Create Service`.
 
 ## IAM Round 2
@@ -124,6 +130,7 @@ Now that we know the cluster name and service name, we can create the IAM Policy
 
 ### ECS Policy
 The Elastic Container Service task that launches the containers needs to be able to control itself, and understand which network interface is attached to it in order to properly update the DNS records, as well as turn itself off when it's not in use.  Within this policy we give full access for ECS to control its own service and correspoinding tasks, and describe all network interfaces in EC2.  Replace the `xxxxxxxxxxxx` below with the appriopriate account ID in your ARN.
+
 Call this policy `ecs.rw.minecraft-service`.
 ```json
 {
@@ -155,8 +162,11 @@ Attach this policy to the `ecs.task.minecraft-server` role created earlier.
 
 ## Lambda
 A lambda function must exist that turns on your minecraft service.  We do this with a simple python function that change the "Tasks Desired" count from zero to one when it is invoked.
+
 Because we are relying on Route53+CloudWatch to invoke the Lambda function, it *must* reside in the N. Virginia (us-east-1) region.
+
 Create a new function using `Author from scratch`.  I've used Python 3.9 but the latest version available should be fine.  Call it something like `minecraft-launcher`.  The other defaults are fine, it will create an IAM role we will modify afterward.  We do not need to specify a VPC.
+
 Once the function has been created and you're in the code editor, replace the contents of the default lambda_function.py with this:
 ```python
 import json
@@ -185,6 +195,7 @@ def lambda_handler(event, context):
     print("desiredCount already at 1")
 ```
 This file is also in this repository in the `lambda` folder.  Change the region, if needed, to the location of where your ECS Cluster is.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy to it so that it will actually work.
+
 Lambda can be very inexpensive when used sparingly.  For example, this lambda function runs in about 1600ms when starting the container, and in about 500ms if the container is already online.  This means, running at a 128MB memory allocation, it will cost $0.00000336 the first time the server is launched from an off state, and about $0.00000105 every time someone connects to an online server, because anyone connecting will have to perform a DNS lookup which will trigger your lambda function.  If you and four friends played once a day for a month, it would come out to $0.0002583, which is 2.6% of a single penny.
 
 ## Route 53
@@ -192,6 +203,7 @@ Ensure that a domain name you own is set up in Route 53.  Add an A record with a
 
 ## IAM Route53 Policy
 This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
+
 Note: This will give your container access to change _all_ records within the hosted zone, and this may not be desirable if you're using this domain for anything else outside of this purpose.  If you'd like to increase security, you can create a subdomain of the main domain for this purpose.  This is an advanced use case and the setup is described pretty well within [Delegate Zone Setup].
 ```json
 {
