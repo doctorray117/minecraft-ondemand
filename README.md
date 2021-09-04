@@ -9,7 +9,7 @@ The process works as follows:
 1. Open Minecraft Multiplayer, let it look for our server, it will fail.
 2. The DNS lookup query is logged in Route53 on our public hosted zone.
 3. CloudWatch forwards the query to a Lambda function.
-4. The Lambda function modifies an ECS Fargate service to a desired task count of 1.
+4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
 5. Fargate launches two containers, Minecraft and a watchdog.
 6. The watchdog optionally sends a text message through Twilio when the server is ready.
 7. Refresh Minecraft server list, server is ready to connect.
@@ -71,22 +71,22 @@ Scroll back up and add a container.  Call it minecraft-server.
 - Port Mappings: 25565 TCP
 - Essential: NOT Checked (task stops with the watchdog container)
 - Environment Variables.
--- EULA: TRUE
--- Other from [Minecraft Docker Server Docs]
+  - EULA: TRUE
+  - Other from [Minecraft Docker Server Docs]
 - Mount Points: data mounted to /data
 
 Add a second container.  Call it mc-watchdog
 - Image URI from ECR container uploaded above.
 - Essential: YES checked
 - Environmental Variables
--- CLUSTER: minecraft
--- SERVICE: minecraft-server
--- DNSZONE: Route53 hosted zone ID
--- SERVERNAME: minecraft.example.com
--- TWILIOFROM: +1XXXYYYZZZZ (optional, your twilio number)
--- TWILIOTO: +1XXXYYYZZZZ (optional, your cell phone to get a text on)
--- TWILIOAID: Twilio account ID (optional)
--- TWILIOAUTH: Twilio auth code (optional)
+  - CLUSTER: minecraft
+  - SERVICE: minecraft-server
+  - DNSZONE: Route53 hosted zone ID
+  - SERVERNAME: minecraft.example.com
+  - TWILIOFROM: +1XXXYYYZZZZ (optional, your twilio number)
+  - TWILIOTO: +1XXXYYYZZZZ (optional, your cell phone to get a text on)
+  - TWILIOAID: Twilio account ID (optional)
+  - TWILIOAUTH: Twilio auth code (optional)
 
 Create task.
 
