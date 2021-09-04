@@ -1,4 +1,4 @@
-# version 1.0
+# version 1.0.0
 
 FROM ubuntu:20.04
 
