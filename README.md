@@ -26,7 +26,7 @@ The process works as follows:
 - tl;dr : $0.50 per month for DNS zones, $0.0149 (one point five cents) per hour for Fargate Spot or $0.049 (four point nine cents) per hour for regular Fargate.  All other costs negligible, a couple of pennies per month at most.
 
 # Installation and Setup
-One day, this could be a Cloudformation template.  Until then, these steps are required.
+One day, this could be a Cloud Deployment Kit script.  Until then, these steps are required.
 
 ## Region Selection
 While it doesn't matter which region you decide to run your server in, Route53 will only ship its logs to us-east-1, which in turns means that the lambda function also has to be in us-east-1.  This lambda function can fire off the server in another region without issue, as long as the destination region is specified within the lambda function code.  For the purposes of this documentation, I'm using us-west-2 to run my server.
@@ -48,7 +48,23 @@ In the IAM console, create a new role.
 Call it something useful, like ecs.task.minecraft-server.  Three policies must be linked to this role, but we are only ready to create the first one now.
 
 ### EFS Policy
-The first policy we need to create will allow for read/write access to our new EFS drive.
+The first policy we need to create will allow for read/write access to our new EFS drive.  Call it efs.rw.minecraft-data and place the ARN from the EFS created earlier in the policy's resource line:
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "elasticfilesystem:ClientMount",
+                "elasticfilesystem:ClientWrite",
+                "elasticfilesystem:DescribeFileSystems"
+            ],
+            "Resource": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:file-system/fs-xxxxxxxx"
+        }
+    ]
+}
+```
 
 ## Elastic Container Service
 
