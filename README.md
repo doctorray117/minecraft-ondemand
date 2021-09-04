@@ -38,9 +38,6 @@ A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS s
 ## Elastic File System
 EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  Connecting to EFS and making changes is only possible by mounting it to an Linux based EC2 instance or by SFTP via AWS Transfer.
 
-## Elastic Container Registry
-Create a new private repo for our watchdog in ECR, such as 'minecraft/mcwatchdog'.
-
 ## IAM
 The IAM Console is where we configure the roles and policies required to give access to the Task running the Minecraft server and the Lambda Function used to start it.
 
@@ -70,7 +67,7 @@ The first policy we need to create will allow for read/write access to our new E
 ## Elastic Container Service
 
 ### Cluster
-Create a new "Networking Only" Cluster.  Call it Minecraft.  Don't create a dedicated VPC for this.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
+Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
 
 ### Task Definition
 Create a new Task Definition called minecraft-server.
@@ -88,26 +85,27 @@ Scroll back up and add a container.  Call it minecraft-server.
 - Port Mappings: 25565 TCP
 - Essential: NOT Checked (task stops with the watchdog container)
 - Environment Variables.
-  - EULA: TRUE
-  - Other from [Minecraft Docker Server Docs]
-- Mount Points: data mounted to /data
+  - EULA: `TRUE`
+  - Any additional stuff you want from [Minecraft Docker Server Docs]
+- Mount Points: `data` mounted to `/data`
 
-Add a second container.  Call it mc-watchdog
-- Image URI from ECR container uploaded above.
+Add a second container.  Call it mc-watchdog.  If using Twilio to alert you when the server is ready, all four twilio variables must be specified.
+- Image: doctorray/minecraft-ecsfargate-watchdog
 - Essential: YES checked
 - Environmental Variables
-  - CLUSTER: minecraft
-  - SERVICE: minecraft-server
+  - CLUSTER: `minecraft`
+  - SERVICE: `minecraft-server`
   - DNSZONE: Route53 hosted zone ID
-  - SERVERNAME: minecraft.example.com
-  - TWILIOFROM: +1XXXYYYZZZZ (optional, your twilio number)
-  - TWILIOTO: +1XXXYYYZZZZ (optional, your cell phone to get a text on)
+  - SERVERNAME: `minecraft.example.com`
+  - TWILIOFROM: `+1XXXYYYZZZZ` (optional, your twilio number)
+  - TWILIOTO: `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
   - TWILIOAID: Twilio account ID (optional)
   - TWILIOAUTH: Twilio auth code (optional)
 
 Create task.
 
 ### Service
+
 
 ## IAM ECS Policy
 The Elastic Container Service task that launches the containers needs to be able to control itself, and understand which network interface is attached to it in order to properly update the DNS records, as well as turn itself off when it's not in use.  Within this policy we give full access for ECS to control its own service and correspoinding tasks, and describe all network interfaces in EC2.  I've called this policy ecs.rw.minecraft-service.
