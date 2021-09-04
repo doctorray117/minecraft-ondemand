@@ -113,7 +113,11 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 Create task.
 
 ### Service
-
+Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only FARGATE_SPOT, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to safe a few pennies, at the extremely low risk of game interruption.
+Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this is adjusted later on demand).  Everything else on this page is fine as default. Hit Next.
+Select your VPC, and select _all of the subnets that your EFS was created in_ which is probably all of them.  Using all the subnets will also maximize your success of running Fargate Spot tasks.
+For Security Group, click edit.  Let it create a new security group.  Change the default HTTP rule to `Custom TCP` and change the port to `25565` from `Anywhere`, which will allow anyone to connect to the server once it is online (they have to know the name of course!)  You could also restrict by known IP addresses but this is cumbersome to update regularly.  Tap save.
+Ensure that "Auto-assign public IP" is `ENABLED` (this is default).  Tap `Next`, `Next`, and `Create Service`.
 
 ## IAM Round 2
 Now that we know the cluster name and service name, we can create the IAM Policy for ECS control, and attach it to the Role we created earlier.
@@ -187,8 +191,7 @@ Lambda can be very inexpensive when used sparingly.  For example, this lambda fu
 Ensure that a domain name you own is set up in Route 53.  Add an A record with a 30 second TTL with a unique name that you will use to connect to your minecraft server.  Something like minecraft.example.com, or more complex if desired, as every time anyone _in the world_ performs a DNS lookup on this name, your Minecraft server will launch.
 
 ## IAM Route53 Policy
-This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route53 and place it in the Resource line within this policy.
-
+This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
 Note: This will give your container access to change _all_ records within the hosted zone, and this may not be desirable if you're using this domain for anything else outside of this purpose.  If you'd like to increase security, you can create a subdomain of the main domain for this purpose.  This is an advanced use case and the setup is described pretty well within [Delegate Zone Setup].
 ```json
 {
@@ -213,6 +216,7 @@ Note: This will give your container access to change _all_ records within the ho
     ]
 }
 ```
+Attach this policy to your ECS Task Role.
 
 ## CloudWatch
 
