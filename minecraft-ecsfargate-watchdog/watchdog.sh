@@ -11,6 +11,10 @@
 
 function zero_service ()
 {
+  [ -n "$TWILIOFROM" ] && [ -n "$TWILIOTO" ] && [ -n "$TWILIOAID" ] && [ -n "$TWILIOAUTH" ] && \
+  echo "Twilio information set, sending text message that we shutting down" && \
+  curl --silent -XPOST -d "Body=Shutting down Minecraft Server" -d "From=$TWILIOFROM" -d "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" -u "$TWILIOAID:$TWILIOAUTH"
+
   echo Setting desired task count to zero.
   aws ecs update-service --cluster $CLUSTER --service $SERVICE --desired-count 0
   exit 0
