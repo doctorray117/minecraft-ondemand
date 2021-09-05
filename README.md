@@ -20,8 +20,8 @@ The process works as follows:
 
 ## Requirements
 - AWS Account
-- Domain name with DNS served from Route53
-- Minecraft Java edition (though it could be tweaked to work with bedrock)
+- Domain name with public DNS served from Route53.  Does not need to be registered through Route53.
+- Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
 - Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
 
 ## Cost Breakdown
