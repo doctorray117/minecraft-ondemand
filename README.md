@@ -15,6 +15,9 @@ The process works as follows:
 7. Refresh Minecraft server list, server is ready to connect.
 8. After 10 minutes without a connection or 20 minutes after the last client disconnects (customizable) the watchdog sets the desired task count to zero and shuts down.
 
+## Diagram
+![Basic Workflow](diagrams/aws_architecture.drawio.png)
+
 ## Requirements
 - AWS Account
 - Domain name with DNS served from Route53
