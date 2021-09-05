@@ -7,7 +7,7 @@ Instead of paying a minecraft hosting service for a private server for you and y
 ## Workflow
 The process works as follows:
 1. Open Minecraft Multiplayer, let it look for our server, it will fail.
-2. The DNS lookup query is logged in Route53 on our public hosted zone.
+2. The DNS lookup query is logged in Route 53 on our public hosted zone.
 3. CloudWatch forwards the query to a Lambda function.
 4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
 5. Fargate launches two containers, Minecraft and a watchdog.
@@ -20,7 +20,7 @@ The process works as follows:
 
 ## Requirements
 - AWS Account
-- Domain name with public DNS served from Route53.  Does not need to be registered through Route53.
+- Domain name with public DNS served from Route 53.  Does not need to be registered through Route 53.
 - Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
 - Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
 
@@ -33,7 +33,7 @@ The process works as follows:
 One day, this could be a Cloud Deployment Kit script.  Until then, these steps are required.
 
 ## Region Selection
-While it doesn't matter which region you decide to run your server in, **Route53 will only ship its logs to us-east-1**, which in turns means that the lambda function also has to be in us-east-1.  This lambda function can fire off the server in another region without issue, as long as the destination region is specified within the lambda function code.  For the purposes of this documentation, I'm using us-west-2 to run my server.
+While it doesn't matter which region you decide to run your server in, **Route 53 will only ship its logs to us-east-1**, which in turns means that the lambda function also has to be in us-east-1.  This lambda function can fire off the server in another region without issue, as long as the destination region is specified within the lambda function code.  For the purposes of this documentation, I'm using us-west-2 to run my server.
 
 ## VPC
 A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS shares to be mounted.  A subnet should exist in each availability zone so that Fargate (and Fargate Spot, if used) can properly launch the tasks in an AZ with plenty of capacity.  A security group for our task is required but is easiest configured when setting up the Task Definition below.
@@ -41,7 +41,7 @@ A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS s
 A [Default VPC] should do the trick, chances are you've already got one.
 
 ## Elastic File System
-EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  By using an "Access Point" the mounted folder is created automatically, so no mounting of the EFS to an external resource is required to get up and running.  To make changes to the files like `server.properties` later however, more advanced measures may need to be taken.  Connecting to EFS and making changes is only possible by mounting it to an Linux based EC2 instance or by SFTP via AWS Transfer.
+EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  By using an "Access Point" the mounted folder is created automatically, so no mounting of the EFS to an external resource is required to get up and running.  To make changes to the files like `server.properties` later however, a user can either mount the EFS file system to a Linux host in their account if they're comfortable with that, or I detail another method below using AWS DataSync and S3 that anyone can use without Linux experience.
 
 ### Creating the EFS
 Open the Elastic File System console and create a new file system.  Believe it or not, all the defaults are fine here!  It will create an EFS available in each subnet within your VPC.
@@ -67,7 +67,7 @@ Ultimately we'll need to create:
 - Role for the Lambda function (Lambda will create this for us and we'll add permissions to it)
 - Policy to read/write the EFS mount attached to the Task role (EFS ARN required to create this Policy)
 - Policy to turn our ECS service and tasks on and off, attached to both the Task role and the Lambda role. (ECS cluster and service name required to create this Policy)
-- Policy to update a DNS record in Route53, attached to the Task role. (Hosted Zone ID required to create this Policy)
+- Policy to update a DNS record in Route 53, attached to the Task role. (Hosted Zone ID required to create this Policy)
 
 ### Role Generation
 In the IAM console, create a new role for the ECS Fargate Task.
@@ -124,7 +124,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 - Environmental Variables
   - `CLUSTER` : `minecraft`
   - `SERVICE` : `minecraft-server`
-  - `DNSZONE` : Route53 hosted zone ID
+  - `DNSZONE` : Route 53 hosted zone ID
   - `SERVERNAME` : `minecraft.example.com`
   - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
@@ -182,7 +182,7 @@ Attach this policy to the `ecs.task.minecraft-server` role created earlier.
 ## Lambda
 A lambda function must exist that turns on your minecraft service.  We do this with a simple python function that change the "Tasks Desired" count from zero to one when it is invoked.
 
-Because we are relying on Route53+CloudWatch to invoke the Lambda function, it *must* reside in the N. Virginia (us-east-1) region.
+Because we are relying on Route 53+CloudWatch to invoke the Lambda function, it *must* reside in the N. Virginia (us-east-1) region.
 
 Create a new function using `Author from scratch`.  I've used Python 3.9 but the latest version available should be fine.  Call it something like `minecraft-launcher`.  The other defaults are fine, it will create an IAM role we will modify afterward.  We do not need to specify a VPC.
 
@@ -226,10 +226,10 @@ Add an A record with a 30 second TTL with a unique name that you will use to con
 ### Query Logging
 The magic that allows the on-demand idea to work without any "always on" infrastructure comes in here, with Query logging.  Every time someone looks up a DNS record for your domain, it will hit Route 53 as the authoritative DNS server.  These queries can be logged and actions performed from them.  From your hosted zone, click `Configure query logging` on the top right.
 
-In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/route53/yourdomainname.com` and click `Create`.
+In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/Route 53/yourdomainname.com` and click `Create`.
 
 ## IAM Route 53 Policy
-This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
+This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route 53 and place it in the Resource line within this policy.  Call it `Route 53.rw.yourdomainname`.
 
 Note: This will give your container access to change _all_ records within the hosted zone, and this may not be desirable if you're using this domain for anything else outside of this purpose.  If you'd like to increase security, you can create a subdomain of the main domain for this purpose.  This is an advanced use case and the setup is described pretty well within [Delegate Zone Setup].
 ```json
@@ -239,16 +239,16 @@ Note: This will give your container access to change _all_ records within the ho
         {
             "Effect": "Allow",
             "Action": [
-                "route53:GetHostedZone",
-                "route53:ChangeResourceRecordSets",
-                "route53:ListResourceRecordSets"
+                "Route 53:GetHostedZone",
+                "Route 53:ChangeResourceRecordSets",
+                "Route 53:ListResourceRecordSets"
             ],
-            "Resource": "arn:aws:route53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
+            "Resource": "arn:aws:Route 53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "route53:ListHostedZones"
+                "Route 53:ListHostedZones"
             ],
             "Resource": "*"
         }
@@ -260,7 +260,7 @@ Attach this policy to your ECS Task Role.
 ## CloudWatch
 The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
 
-Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/route53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.
+Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/Route 53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.
 
 Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
 
@@ -374,14 +374,17 @@ Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the
 ## Concerned about cost overruns?
 Set up a [Billing Alert]!  You can get an email if your bill exceeds a certain amount.  Set it at $5 maybe?
 
-## How to edit server.properties and stuff
-Maybe you want to set up some advanced stuff, customize your server a bit.  How can you do this?  Not super easy, but you need to access the EFS access point via NFS mount to do so.  This is really easy for Linux-heads that can roll a quick AWS AMI in minutes, mount the share, and open a text editor.  This is honestly the easiest way to go.  However I understand the need/desire for an easier way to swap out one or two files.  Maybe I'll design a container task for doing this ad-hoc and add it here...
+## Twilio setup / usage
+Open a free account at [Twilio], and load it up with $10 or so of credit.  You can purchase a phone number here for a small monthly fee, and pay per use text messaging.  Doing this will allow the container to send you a text message when the server is available for use.
 
+## Suggestions, comments, concerns?
+Open an issue, fork the repo, send me a pull request or a message.
 
   [Default VPC]: <https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html>
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
-  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
+  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-Route 53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
+  [Twilio]: <https://twilio.com>
