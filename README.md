@@ -118,8 +118,8 @@ Scroll back up and add a container.  Call it `minecraft-server`.
   - Any additional stuff you want from [Minecraft Docker Server Docs]
 - Mount Points: `data` mounted to `/data`
 
-Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready, all four twilio variables must be specified.
-- Image: doctorray/minecraft-ecsfargate-watchdog (source for this container within this project if you want to build/host it yourself)
+Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.
+- Image: `doctorray/minecraft-ecsfargate-watchdog` (source for this container within this project if you want to build/host it yourself)
 - Essential: YES checked
 - Environmental Variables
   - `CLUSTER` : `minecraft`
@@ -368,6 +368,9 @@ Check all of the above, but also ensure you're using an EFS Access Point with th
 
 ### Can't connect to minecraft server
 Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the containers are in the RUNNING state.  Open the running task, go to the logs tab, select minecraft and see if there are any errors on the logs.
+
+### Not getting text messages
+Are your Twilio vars valid?  Do you have sufficient funds on your Twilio account?  Check the logs on the watchdog container for any curl errors.
 
 # Other Stuff
 
