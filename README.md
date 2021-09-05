@@ -260,7 +260,7 @@ Attach this policy to your ECS Task Role.
 ## CloudWatch
 The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
 
-Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/Route 53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.
+Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/Route 53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.  Optionally, modify the retention period to delete the logs after a few days so they don't accumulate forever.
 
 Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
 
