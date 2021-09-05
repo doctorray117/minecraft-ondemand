@@ -41,7 +41,23 @@ A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS s
 A [Default VPC] should do the trick, chances are you've already got one.
 
 ## Elastic File System
-EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  Connecting to EFS and making changes is only possible by mounting it to an Linux based EC2 instance or by SFTP via AWS Transfer.
+EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  By using an "Access Point" the mounted folder is created automatically, so no mounting of the EFS to an external resource is required to get up and running.  To make changes to the files like `server.properties` later however, more advanced measures may need to be taken.  Connecting to EFS and making changes is only possible by mounting it to an Linux based EC2 instance or by SFTP via AWS Transfer.
+
+### Creating the EFS
+Open the Elastic File System console and create a new file system.  Believe it or not, all the defaults are fine here!  It will create an EFS available in each subnet within your VPC.
+
+Select your newly created filesystem, and tap the `Access Points` tab.  Create a new access point using the following specifics:
+- Details
+  - Root directory path : `/minecraft`
+- POSIX User
+  - User ID : `1000`
+  - Group ID : `1000`
+- Root directory creation permissions (this is required, otherwise our container won't be able to create the folder to store its data the first time)
+  - Owner user ID : `1000`
+  - Owner group IP : `1000`
+  - POSIX Permissions : `0755`
+
+Click `Create access point` and then view it within the console.  Note the `Access Point ARN` as you will need it for the IAM policy detailed below.
 
 ## IAM Round 1
 The IAM Console is where we configure the roles and policies required to give access to the Task running the Minecraft server and the Lambda Function used to start it.
@@ -59,7 +75,7 @@ In the IAM console, create a new role for the ECS Fargate Task.
 Call it something useful, like `ecs.task.minecraft-server`.  Three policies must be linked to this role, but we are only ready to create the first one now.
 
 ### EFS Policy
-The first policy we need to create will allow for read/write access to our new EFS drive.  Call it `efs.rw.minecraft-data` and place the ARN from the EFS created earlier in the policy's resource line:
+The first policy we need to create will allow for read/write access to our new EFS Access Point.  Call it `efs.rw.minecraft-data` and place the ARN from the EFS created earlier in the policy's resource line:
 ```json
 {
     "Version": "2012-10-17",
@@ -71,7 +87,7 @@ The first policy we need to create will allow for read/write access to our new E
                 "elasticfilesystem:ClientWrite",
                 "elasticfilesystem:DescribeFileSystems"
             ],
-            "Resource": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:file-system/fs-xxxxxxxx"
+            "Resource": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:access-point/fsap-xxxxxxxxxxxxxxxxx"
         }
     ]
 }
@@ -80,7 +96,7 @@ The first policy we need to create will allow for read/write access to our new E
 ## Elastic Container Service
 
 ### Cluster
-Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
+Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this, use the default or same one you already created your EFS in.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
 
 ### Task Definition
 Create a new Task Definition called minecraft-server.
@@ -91,7 +107,7 @@ Create a new Task Definition called minecraft-server.
 - Task Memory: 2GB (good to start, increase later if needed)
 - Task CPU: 1 vCPU (good to start, increase later if needed)
 
-Skip containers temporarily and go down to Volumes.  Add a volume, call it `data`, volume type EFS.  Select the filesystem id created above, root directory `/minecraft` and click Add.
+Skip containers temporarily and go down to Volumes.  Add a volume, call it `data`, volume type EFS.  Select the filesystem id created above, the access point id created above, enable `Encryption in transit` and click Add.
 
 Scroll back up and add a container.  Call it `minecraft-server`.
 - Image: itzg/minecraft-server
@@ -103,7 +119,7 @@ Scroll back up and add a container.  Call it `minecraft-server`.
 - Mount Points: `data` mounted to `/data`
 
 Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready, all four twilio variables must be specified.
-- Image: doctorray/minecraft-ecsfargate-watchdog
+- Image: doctorray/minecraft-ecsfargate-watchdog (source for this container within this project if you want to build/host it yourself)
 - Essential: YES checked
 - Environmental Variables
   - `CLUSTER` : `minecraft`
@@ -118,11 +134,11 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 Create task.
 
 ### Service
-Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only FARGATE_SPOT, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to safe a few pennies, at the extremely low risk of game interruption.
+Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only FARGATE_SPOT, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
 
-Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this is adjusted later on demand).  Everything else on this page is fine as default. Hit Next.
+Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this will prevent it from running now before it is ready, and the other processes adjust it later on demand).  Everything else on this page is fine as default. Hit Next.
 
-Select your VPC, and select _all of the subnets that your EFS was created in_ which is probably all of them.  Using all the subnets will also maximize your success of running Fargate Spot tasks.
+Select your VPC, and select all of the subnets individually, which will maximize your success of running Fargate Spot tasks.
 
 For Security Group, click edit.  Let it create a new security group.  Change the default HTTP rule to `Custom TCP` and change the port to `25565` from `Anywhere`, which will allow anyone to connect to the server once it is online (they have to know the name of course!)  You could also restrict by known IP addresses but this is cumbersome to update regularly.  Tap save.
 
@@ -197,14 +213,22 @@ def lambda_handler(event, context):
   else:
     print("desiredCount already at 1")
 ```
-This file is also in this repository in the `lambda` folder.  Change the region, if needed, to the location of where your ECS Cluster is.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy to it so that it will actually work.
+This file is also in this repository in the `lambda` folder.  Change the region on line 6, if needed, to the location of where your ECS Cluster is.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy we created above to it so that it will actually work.
 
 Lambda can be very inexpensive when used sparingly.  For example, this lambda function runs in about 1600ms when starting the container, and in about 500ms if the container is already online.  This means, running at a 128MB memory allocation, it will cost $0.00000336 the first time the server is launched from an off state, and about $0.00000105 every time someone connects to an online server, because anyone connecting will have to perform a DNS lookup which will trigger your lambda function.  If you and four friends played once a day for a month, it would come out to $0.0002583, which is 2.6% of a single penny.
 
 ## Route 53
-Ensure that a domain name you own is set up in Route 53.  Add an A record with a 30 second TTL with a unique name that you will use to connect to your minecraft server.  Something like minecraft.example.com, or more complex if desired, as every time anyone _in the world_ performs a DNS lookup on this name, your Minecraft server will launch.
+Ensure that a domain name you own is set up in Route 53.  If you don't own one, consider registering one.  You can use Route 53 for convenience or go to one of the big domain providers.  Either way, ensure you've got your nameservers set to host out of Route 53 as it's required for the on-demand functionality.
 
-## IAM Route53 Policy
+### Server DNS Record
+Add an A record with a 30 second TTL with a unique name that you will use to connect to your minecraft server.  Something like minecraft.example.com, or more complex if desired, as every time anyone _in the world_ performs a DNS lookup on this name, your Minecraft server will launch.  The value of the record is irrelevant because it will be updated every time our container launches.  Use 1.1.1.1 ot 192.168.1.1 for now if you can't think of anything.
+
+### Query Logging
+The magic that allows the on-demand idea to work without any "always on" infrastructure comes in here, with Query logging.  Every time someone looks up a DNS record for your domain, it will hit Route 53 as the authoritative DNS server.  These queries can be logged and actions performed from them.  From your hosted zone, click `Configure query logging` on the top right.
+
+In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/route53/yourdomainname.com` and click `Create`.
+
+## IAM Route 53 Policy
 This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
 
 Note: This will give your container access to change _all_ records within the hosted zone, and this may not be desirable if you're using this domain for anything else outside of this purpose.  If you'd like to increase security, you can create a subdomain of the main domain for this purpose.  This is an advanced use case and the setup is described pretty well within [Delegate Zone Setup].
@@ -234,11 +258,55 @@ Note: This will give your container access to change _all_ records within the ho
 Attach this policy to your ECS Task Role.
 
 ## CloudWatch
+The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
 
-##
+Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/route53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.
+
+Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
+
+In the `Create Lambda subscription filter` page, use the following values:
+- Lambda Function : `minecraft-launcher` or whatever you called it.
+- Log format : `other`
+- Subscription filter pattern: `minecraft.yourdomain.com` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
+- Subscription filter name: `minecraft`
+
+Click `Start streaming`.
+
+# Testing and Troubleshooting
+The easiest way to trigger your process is to perform a dns lookup, which you can simply do by trying to visit your server name in a web browser.  It will fail (duh) but it will also trigger your server to start up.
+
+## Areas of concern, what to watch
+
+### CloudWatch
+Are your DNS queries getting logged properly?  Check in the log groups, hit refresh.  Often takes up to 30 seconds for them to show up.
+
+### Lambda
+Is your function running?  We didn't design a "test" functionality for it but you could!
+
+### Elastic Container Service
+Can you start your server manually by setting desired count to 1?  Here's some possible jumping off points for issues:
+
+#### Service won't launch task
+Check the execution roles, and that they have the right permissions.  Check the container names for typos.  Check that you selected multiple subnets in the task definition, and that it's using the LATEST version.
+
+#### Containers won't switch to RUNNING state
+Check all of the above, but also ensure you're using an EFS Access Point with the specified auto-create permissions.  The minecraft container will fail if it can't mount the data volume.
+
+### Can't connect to minecraft server
+Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the containers are in the RUNNING state.  Open the running task, go to the logs tab, select minecraft and see if there are any errors on the logs.
+
+# Other Stuff
+
+## Concerned about cost overruns?
+Set up a [Billing Alert]!  You can get an email if your bill exceeds a certain amount.  Set it at $5 maybe?
+
+## How to edit server.properties and stuff
+Maybe you want to set up some advanced stuff, customize your server a bit.  How can you do this?  Not super easy, but you need to access the EFS access point via NFS mount to do so.  This is really easy for Linux-heads that can roll a quick AWS AMI in minutes, mount the share, and open a text editor.  This is honestly the easiest way to go.  However I understand the need/desire for an easier way to swap out one or two files.  Maybe I'll design a container task for doing this ad-hoc and add it here...
+
 
   [Default VPC]: <https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html>
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
   [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
+  [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
