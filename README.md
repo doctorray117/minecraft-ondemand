@@ -229,7 +229,7 @@ The magic that allows the on-demand idea to work without any "always on" infrast
 In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/Route 53/yourdomainname.com` and click `Create`.
 
 ## IAM Route 53 Policy
-This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route 53 and place it in the Resource line within this policy.  Call it `Route 53.rw.yourdomainname`.
+This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route 53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
 
 Note: This will give your container access to change _all_ records within the hosted zone, and this may not be desirable if you're using this domain for anything else outside of this purpose.  If you'd like to increase security, you can create a subdomain of the main domain for this purpose.  This is an advanced use case and the setup is described pretty well within [Delegate Zone Setup].
 ```json
