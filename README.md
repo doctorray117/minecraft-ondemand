@@ -124,7 +124,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 - Environmental Variables
   - `CLUSTER` : `minecraft`
   - `SERVICE` : `minecraft-server`
-  - `DNSZONE` : Route 53 hosted zone ID
+  - `DNSZONE` : Route 53 hosted zone ID, this is a 21 digit string you used in the policy above.
   - `SERVERNAME` : `minecraft.example.com`
   - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
