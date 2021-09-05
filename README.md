@@ -272,6 +272,80 @@ In the `Create Lambda subscription filter` page, use the following values:
 
 Click `Start streaming`.
 
+# Usage and Customization
+To use your new server, open Minecraft Multiplayer, add your new server, and join.  It will fail at first but then everything comes online and you can join your new world!  You may notice that you don't have many permissions or ability to customize a lot of things yet, so let's dig into how to edit the relevant files!
+
+## Option 1: Mount EFS Directly
+This option is the easiest for folks that are comfortable in the Linux command line, so I'm not going to step-by-step it.  But basically, launch an AWS Linux v2 AMI in EC2 with bare-minimum specs, log into it, mount the EFS Access Point, and use your favorite command line text editor to change around server.properties, the ops.json, whitelists, whatever, and then re-launch your server with the new configuration.
+
+## Option 2: DataSync and S3
+Since EFS doesn't have a convenient way to access the files outside of mounting a share to something within the VPC, we can utilize AWS DataSync to copy files in and out to a more convenient location.  These instructions will use S3 as there are countless S3 clients out there you can manage files, including the AWS Console itself.
+
+### Step 1: Create an S3 bucket
+Open the S3 console and create a bucket.  It must have a unique name (across ALL s3 buckets).  `yourdomainname-files` works pretty well.  Place it in the same region as your EFS share.  I always like to enable Bucket Versioning, in case you need to reference old files or restore to a different version.  Also enable Server Side Encryption (why isn't this on by default?).
+
+### Step 2: Create an EFS -> S3 DataSync Task
+Open the DataSync console and click `Create task`.
+
+For `Source location options`, select `Create new location` with these options:
+- Location type : `Amazon EFS file system`
+- Region : The region your EFS is in
+- EFS File System : The file system you created earlier (this is the file system itself not the access point)
+- Mount path : `/minecraft` or wherever your Access Point is pointed to
+
+Click `Next`.  For `Destination location options` select `Create new location` with these options:
+- Location type : `Amazon S3`
+- Region : The region your bucket was created in
+- S3 bucket : The bucket you created earlier
+- S3 storage class : `Standard` is fine, these are really small files.
+- Folder : `/minecraft`
+- IAM Role : Click `Autogenerate` and it will fill this in for you.
+
+Click `Next`.  For `Task Name` consider something like `minecraft-efs-to-s3`.  For the rest of the options, use these:
+- Task execution configuration : Use all defaults
+- Data transfer configuration
+  - Data to scan : Entire source location
+  - Transfer mode : Transfer only data that has changed
+  - Keep deleted files / Overwrite files : Keep enabled as default
+  - Excludes : add three excludes:
+    - `*.jar` (this prevents copying the minecraft server binary
+    - `/world` (we definitely don't want to overwrite your world...)
+    - `/logs` (we can go to cloudwatch to look at these anytime)
+- Schedule : not scheduled, we'll run it on demand
+- Task logging
+  - Log level : Do not send logs to CloudWatch
+
+Click `Next` and `Create task`.
+
+### Step 3: Create an S3 -> EFS DataSync Task
+Open the DataSync console and click `Create task`.
+
+For `Source location options`, select `Choose an existing location` with these options:
+- Region : The region your S3 bucket is in
+- Existing locations : The S3 location you created in the previous step
+
+Click `Next`.  For `Destination location options` select `Choose an existing location` with these options:
+- Region : The region your EFS is in
+- Existing locations: The EFS location you created in the previous step
+
+Click `Next`.  For `Task Name` consider something like `minecraft-s3-to-efs`.  For the rest of the options, use these:
+- Task execution configuration : Use all defaults
+- Data transfer configuration
+  - Data to scan : Entire source location
+  - Transfer mode : Transfer only data that has changed
+  - Keep deleted files / Overwrite files : Keep enabled as default
+  - Excludes : None necessary this time around
+- Schedule : not scheduled, we'll run it on demand
+- Task logging
+  - Log level : Do not send logs to CloudWatch
+
+Click `Next` and `Create task`.
+
+### Usage and file editing
+After you've launched the minecraft server successfully once, it will create files in EFS such as `server.properties`, `ops.json`, `whitelist.json` among others.  From the DataSync console, you can launch the `minecraft-efs-to-s3` task, which will copy these files from the EFS share to your S3 bucket.  Then you can download these files from S3 (using the console or something like [S3 Browser]), edit them on your computer, then use the same client to upload the files back to S3.  Afterward, open DataSync and launch the `minecraft-s3-to-efs` task to copy the updated files back to your EFS share.  Then when you launch the server again, it will see and use the new files.
+
+Best practice would be, any time you want to make a change to always copy the latest files from EFS to S3 first while your server is off before editing them and copying them back.  Otherwise you may unintentionally regress some settings.
+
 # Testing and Troubleshooting
 The easiest way to trigger your process is to perform a dns lookup, which you can simply do by trying to visit your server name in a web browser.  It will fail (duh) but it will also trigger your server to start up.
 
@@ -310,3 +384,4 @@ Maybe you want to set up some advanced stuff, customize your server a bit.  How 
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
   [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
+  [S3 Browser]: <https://s3browser.com>
