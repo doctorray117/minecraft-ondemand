@@ -100,18 +100,18 @@ Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a de
 
 ### Task Definition
 Create a new Task Definition called minecraft-server.
-- Task Role: ecs.task.minecraft-server (or whatever you called it when creating it above)
-- Network Mode: awsvpc (default)
-- Requires compatibilities: fargate (default)
-- Task Execution Role: ecsTaskExecutionRole (default)
-- Task Memory: 2GB (good to start, increase later if needed)
-- Task CPU: 1 vCPU (good to start, increase later if needed)
+- Task Role: `ecs.task.minecraft-server` (or whatever you called it when creating it above)
+- Network Mode: `awsvpc` (default)
+- Requires compatibilities: `fargate` (default)
+- Task Execution Role: `ecsTaskExecutionRole` (default)
+- Task Memory: `2GB` (good to start, increase later if needed)
+- Task CPU: `1 vCPU` (good to start, increase later if needed)
 
 Skip containers temporarily and go down to Volumes.  Add a volume, call it `data`, volume type EFS.  Select the filesystem id created above, the access point id created above, enable `Encryption in transit` and click Add.
 
 Scroll back up and add a container.  Call it `minecraft-server`.
-- Image: itzg/minecraft-server
-- Port Mappings: 25565 TCP
+- Image: `itzg/minecraft-server`
+- Port Mappings: `25565 TCP`
 - Essential: NOT Checked (task stops with the watchdog container)
 - Environment Variables.
   - `EULA` : `TRUE`
