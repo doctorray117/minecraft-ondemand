@@ -33,7 +33,9 @@ The process works as follows:
 One day, this could be a Cloud Deployment Kit script.  Until then, these steps are required.
 
 ## Region Selection
-While it doesn't matter which region you decide to run your server in, **Route 53 will only ship its logs to us-east-1**, which in turns means that the lambda function also has to be in us-east-1.  This lambda function can fire off the server in another region without issue, as long as the destination region is specified within the lambda function code.  For the purposes of this documentation, I'm using us-west-2 to run my server.
+While it doesn't matter which region you decide to run your server in, **Route 53 will only ship its logs to us-east-1**, which in turns means that the lambda function also has to be in us-east-1.  This lambda function can fire off the server in another region without issue, as long as the destination region is specified within the lambda function code.  For the purposes of this documentation, I'm using `us-west-2` to run my server.
+
+Check the region in each ARN if you're copy/pasting.  Remember that some stuff has to be in `us-east-1` no matter what.
 
 ## VPC
 A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS shares to be mounted.  A subnet should exist in each availability zone so that Fargate (and Fargate Spot, if used) can properly launch the tasks in an AZ with plenty of capacity.  A security group for our task is required but is easiest configured when setting up the Task Definition below.
@@ -125,7 +127,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
   - `CLUSTER` : `minecraft`
   - `SERVICE` : `minecraft-server`
   - `DNSZONE` : Route 53 hosted zone ID, this is a 21 digit string you used in the policy above.
-  - `SERVERNAME` : `minecraft.example.com`
+  - `SERVERNAME` : `minecraft.yourdomainname.com`
   - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
   - `TWILIOAID` : Twilio account ID (optional)
@@ -134,7 +136,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 Create task.
 
 ### Service
-Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only FARGATE_SPOT, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
+Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only `FARGATE_SPOT`, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
 
 Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this will prevent it from running now before it is ready, and the other processes adjust it later on demand).  Everything else on this page is fine as default. Hit Next.
 
@@ -221,7 +223,7 @@ Lambda can be very inexpensive when used sparingly.  For example, this lambda fu
 Ensure that a domain name you own is set up in Route 53.  If you don't own one, consider registering one.  You can use Route 53 for convenience or go to one of the big domain providers.  Either way, ensure you've got your nameservers set to host out of Route 53 as it's required for the on-demand functionality.
 
 ### Server DNS Record
-Add an A record with a 30 second TTL with a unique name that you will use to connect to your minecraft server.  Something like minecraft.example.com, or more complex if desired, as every time anyone _in the world_ performs a DNS lookup on this name, your Minecraft server will launch.  The value of the record is irrelevant because it will be updated every time our container launches.  Use 1.1.1.1 ot 192.168.1.1 for now if you can't think of anything.
+Add an A record with a 30 second TTL with a unique name that you will use to connect to your minecraft server.  Something like minecraft.yourdomainname.com, or more complex if desired, as every time anyone _in the world_ performs a DNS lookup on this name, your Minecraft server will launch.  The value of the record is irrelevant because it will be updated every time our container launches.  Use 1.1.1.1 ot 192.168.1.1 for now if you can't think of anything.
 
 ### Query Logging
 The magic that allows the on-demand idea to work without any "always on" infrastructure comes in here, with Query logging.  Every time someone looks up a DNS record for your domain, it will hit Route 53 as the authoritative DNS server.  These queries can be logged and actions performed from them.  From your hosted zone, click `Configure query logging` on the top right.
@@ -267,7 +269,7 @@ Go to the `Subscription filters` tab, click `Create` and then `Create Lambda sub
 In the `Create Lambda subscription filter` page, use the following values:
 - Lambda Function : `minecraft-launcher` or whatever you called it.
 - Log format : `other`
-- Subscription filter pattern: `minecraft.yourdomain.com` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
+- Subscription filter pattern: `minecraft.yourdomainname.com` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
 - Subscription filter name: `minecraft`
 
 Click `Start streaming`.
