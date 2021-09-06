@@ -374,6 +374,9 @@ Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the
 ### Not getting text messages
 Are your Twilio vars valid?  Do you have sufficient funds on your Twilio account?  Check the logs on the watchdog container for any curl errors.
 
+## Server starts randomly?
+Remember, the server starts with a DNS query automatically.  So, if you've got buddies you've shared the server with, it may start up if they open their multiplayer screen to play on a different server if yours is in the list!  If this is an issue, it could probably be mitigated with a more advanced CloudWatch Subscription Filter that checks against the source IP address in addition to just the domain name, with it limiting to your ISP or location.
+
 # Other Stuff
 
 ## Concerned about cost overruns?
