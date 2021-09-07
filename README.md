@@ -373,7 +373,7 @@ Check the execution roles, and that they have the right permissions.  Check the 
 Check all of the above, but also ensure you're using an EFS Access Point with the specified auto-create permissions.  The minecraft container will fail if it can't mount the data volume.
 
 ### Can't connect to minecraft server
-Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the containers are in the RUNNING state.  Open the running task, go to the logs tab, select minecraft and see if there are any errors on the logs.
+Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the containers are in the RUNNING state.  Open the running task, go to the logs tab, select minecraft and see if there are any errors on the logs.  Did you make sure you opened the right port (25565 TCP) to the world in the task security group??  Security groups can be edited from both the VPC and the EC2 console.
 
 ### Not getting text messages
 Are your Twilio vars valid?  Do you have sufficient funds on your Twilio account?  Check the logs on the watchdog container for any curl errors.
