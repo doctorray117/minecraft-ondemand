@@ -12,7 +12,7 @@ The process works as follows:
 2. The DNS lookup query is logged in Route 53 on our public hosted zone.
 3. CloudWatch forwards the query to a Lambda function.
 4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
-5. Fargate launches two containers, Minecraft and a watchdog.
+5. Fargate launches two containers, Minecraft and a watchdog, which updates the DNS record to the new Fargate IP
 6. The watchdog optionally sends a text message through Twilio when the server is ready.
 7. Refresh Minecraft server list, server is ready to connect.
 8. After 10 minutes without a connection or 20 minutes after the last client disconnects (customizable) the watchdog sets the desired task count to zero and shuts down.
