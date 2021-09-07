@@ -4,9 +4,11 @@ Almost free serverless on-demand Minecraft server in AWS
 ## Background
 Instead of paying a minecraft hosting service for a private server for you and your friends, host it yourself.  By utilizing several AWS services, a minecraft server can automatically start when you're ready to use it, and shut down when you are done.  The final cost will depend on use but can be as little as a a dollar or two per month.  The cost estimate breakdown is below.
 
+This is a _reasonably_ cost effective solution for someone that doesn't need their server running 24/7.  If that's you, read on!
+
 ## Workflow
 The process works as follows:
-1. Open Minecraft Multiplayer, let it look for our server, it will fail.
+1. Open Minecraft Multiplayer, let it look for our server, it will time out.
 2. The DNS lookup query is logged in Route 53 on our public hosted zone.
 3. CloudWatch forwards the query to a Lambda function.
 4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
@@ -132,6 +134,8 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
   - `TWILIOAID` : Twilio account ID (optional)
   - `TWILIOAUTH` : Twilio auth code (optional)
+  - `STARTUPMIN` : Number of minutes to wait for a connection after starting before terminating (optional, default 10)
+  - `SHUTDOWNMIN` : Number of minutes to wait after the last client disconnects before terminating (optional, default 20)
 
 Create task.
 
