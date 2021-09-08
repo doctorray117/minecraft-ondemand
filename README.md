@@ -294,7 +294,8 @@ From the SNS console, create a topic called `minecraft-notifications`.  Also at 
 
 Note the ARN of your new topic and create a new IAM policy called `sns.publish.minecraft-notifications` with the following definition:
 
-```json { 
+```json
+{ 
     "Version": "2012-10-17",
     "Statement": [
         {
