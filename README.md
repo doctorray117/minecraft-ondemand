@@ -277,8 +277,8 @@ Go to the `Subscription filters` tab, click `Create` and then `Create Lambda sub
 
 In the `Create Lambda subscription filter` page, use the following values:
 - Lambda Function : `minecraft-launcher` or whatever you called it.
-- Log format : `other`
-- Subscription filter pattern: `minecraft.yourdomainname.com` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
+- Log format : `Other`
+- Subscription filter pattern: `"minecraft.yourdomainname.com"` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
 - Subscription filter name: `minecraft`
 
 Click `Start streaming`.
