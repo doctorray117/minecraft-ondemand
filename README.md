@@ -133,7 +133,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
 - Environmental Variables
   - `CLUSTER` : `minecraft`
   - `SERVICE` : `minecraft-server`
-  - `DNSZONE` : Route 53 hosted zone ID, this is a 21 digit string you used in the policy above.
+  - `DNSZONE` : Route 53 hosted zone ID, this is a 21 digit string you will define in the policy further below.
   - `SERVERNAME` : `minecraft.yourdomainname.com`
   - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
@@ -199,32 +199,35 @@ Create a new function using `Author from scratch`.  I've used Python 3.9 but the
 
 Once the function has been created and you're in the code editor, replace the contents of the default lambda_function.py with this:
 ```python
-import json
 import boto3
 
+REGION = 'us-west-2'
+CLUSTER = 'minecraft'
+SERVICE = 'minecraft-server'
+
+
 def lambda_handler(event, context):
+    """Updates the desired count for a service."""
 
-  ecs = boto3.client('ecs', region_name='us-west-2')
-  response = ecs.describe_services(
-    cluster='minecraft',
-    services=[
-      'minecraft-server',
-    ]
-  )
-
-  desired = response["services"][0]["desiredCount"]
-
-  if desired == 0:
-    ecs.update_service(
-      cluster='minecraft',
-      service='minecraft-server',
-      desiredCount=1
+    ecs = boto3.client('ecs', region_name=REGION)
+    response = ecs.describe_services(
+        cluster=CLUSTER,
+        services=[SERVICE],
     )
-    print("Updated desiredCount to 1")
-  else:
-    print("desiredCount already at 1")
+
+    desired = response["services"][0]["desiredCount"]
+
+    if desired == 0:
+        ecs.update_service(
+            cluster=CLUSTER,
+            service=SERVICE,
+            desiredCount=1,
+        )
+        print("Updated desiredCount to 1")
+    else:
+        print("desiredCount already at 1")
 ```
-This file is also in this repository in the `lambda` folder.  Change the region on line 6, if needed, to the location of where your ECS Cluster is.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy we created above to it so that it will actually work.
+This file is also in this repository in the `lambda` folder.  Change the region, cluster, or service on lines 3-5 if needed.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy we created above to it so that it will actually work.
 
 Lambda can be very inexpensive when used sparingly.  For example, this lambda function runs in about 1600ms when starting the container, and in about 500ms if the container is already online.  This means, running at a 128MB memory allocation, it will cost $0.00000336 the first time the server is launched from an off state, and about $0.00000105 every time someone connects to an online server, because anyone connecting will have to perform a DNS lookup which will trigger your lambda function.  If you and four friends played once a day for a month, it would come out to $0.0002583, which is 2.6% of a single penny.
 
@@ -237,7 +240,7 @@ Add an A record with a 30 second TTL with a unique name that you will use to con
 ### Query Logging
 The magic that allows the on-demand idea to work without any "always on" infrastructure comes in here, with Query logging.  Every time someone looks up a DNS record for your domain, it will hit Route 53 as the authoritative DNS server.  These queries can be logged and actions performed from them.  From your hosted zone, click `Configure query logging` on the top right.
 
-In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/Route 53/yourdomainname.com` and click `Create`.
+In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/route53/yourdomainname.com` and click `Create`.
 
 ## IAM Route 53 Policy
 This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route 53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
@@ -250,16 +253,16 @@ Note: This will give your container access to change _all_ records within the ho
         {
             "Effect": "Allow",
             "Action": [
-                "Route 53:GetHostedZone",
-                "Route 53:ChangeResourceRecordSets",
-                "Route 53:ListResourceRecordSets"
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets",
+                "route53:ListResourceRecordSets"
             ],
-            "Resource": "arn:aws:Route 53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
+            "Resource": "arn:aws:route53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "Route 53:ListHostedZones"
+                "route53:ListHostedZones"
             ],
             "Resource": "*"
         }
@@ -271,14 +274,14 @@ Attach this policy to your ECS Task Role.
 ## CloudWatch
 The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
 
-Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/Route 53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.  Optionally, modify the retention period to delete the logs after a few days so they don't accumulate forever.
+Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/route53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.  Optionally, modify the retention period to delete the logs after a few days so they don't accumulate forever.
 
 Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
 
 In the `Create Lambda subscription filter` page, use the following values:
 - Lambda Function : `minecraft-launcher` or whatever you called it.
-- Log format : `other`
-- Subscription filter pattern: `minecraft.yourdomainname.com` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
+- Log format : `Other`
+- Subscription filter pattern: `"minecraft.yourdomainname.com"` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
 - Subscription filter name: `minecraft`
 
 Click `Start streaming`.
@@ -401,7 +404,7 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
-  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-Route 53-hosted-zone>
+  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
