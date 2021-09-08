@@ -128,7 +128,7 @@ Scroll back up and add a container.  Call it `minecraft-server`.
   - Any additional stuff you want from [Minecraft Docker Server Docs]
 - Mount Points: `data` mounted to `/data`
 
-Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If publishing to an SNS topic, the SNSTOPIC variable must be specified.
+Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If publishing to an SNS topic, the `SNSTOPIC` variable must be specified.
 - Image: `doctorray/minecraft-ecsfargate-watchdog` (source for this container within this project if you want to build/host it yourself)
 - Essential: YES checked
 - Environmental Variables
