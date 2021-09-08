@@ -109,7 +109,7 @@ The first policy we need to create will allow for read/write access to our new E
 Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this, use the default or same one you already created your EFS in.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
 
 ### Task Definition
-Create a new Task Definition called minecraft-server.
+Create a new Task Definition called `minecraft-server`.
 - Task Role: `ecs.task.minecraft-server` (or whatever you called it when creating it above)
 - Network Mode: `awsvpc` (default)
 - Requires compatibilities: `fargate` (default)
