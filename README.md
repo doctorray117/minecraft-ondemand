@@ -72,6 +72,7 @@ Ultimately we'll need to create:
 - Policy to read/write the EFS mount attached to the Task role (EFS ARN required to create this Policy)
 - Policy to turn our ECS service and tasks on and off, attached to both the Task role and the Lambda role. (ECS cluster and service name required to create this Policy)
 - Policy to update a DNS record in Route 53, attached to the Task role. (Hosted Zone ID required to create this Policy)
+- Optionally, a Policy to publish notifications to an SNS topic, attached to the Task role.
 
 ### Role Generation
 In the IAM console, create a new role for the ECS Fargate Task.
