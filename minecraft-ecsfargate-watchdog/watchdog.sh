@@ -9,12 +9,25 @@
 [ -n "$STARTUPMIN" ] || { echo "STARTUPMIN env variable not set, defaulting to a 10 minute startup wait" ; STARTUPMIN=10; }
 [ -n "$SHUTDOWNMIN" ] || { echo "SHUTDOWNMIN env variable not set, defaulting to a 20 minute shutdown wait" ; SHUTDOWNMIN=20; }
 
+function send_notification ()
+{
+  [ "$1" = "startup" ] && MESSAGETEXT="Minecraft container online"
+  [ "$1" = "shutdown" ] && MESSAGETEXT="Shutting down Minecraft Server"
+
+  ## Twilio Option
+  [ -n "$TWILIOFROM" ] && [ -n "$TWILIOTO" ] && [ -n "$TWILIOAID" ] && [ -n "$TWILIOAUTH" ] && \
+  echo "Twilio information set, sending $1 message" && \
+  curl --silent -XPOST -d "Body=$MESSAGETEXT" -d "From=$TWILIOFROM" -d "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" -u "$TWILIOAID:$TWILIOAUTH"
+
+  ## SNS Option
+  [ -n "$SNSTOPIC" ] && \
+  echo "SNS topic set, sending $1 message" && \
+  aws sns publish --topic-arn "$SNSTOPIC" --message "$MESSAGETEXT"
+}
+
 function zero_service ()
 {
-  [ -n "$TWILIOFROM" ] && [ -n "$TWILIOTO" ] && [ -n "$TWILIOAID" ] && [ -n "$TWILIOAUTH" ] && \
-  echo "Twilio information set, sending text message that we shutting down" && \
-  curl --silent -XPOST -d "Body=Shutting down Minecraft Server" -d "From=$TWILIOFROM" -d "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" -u "$TWILIOAID:$TWILIOAUTH"
-
+  send_notification shutdown
   echo Setting desired task count to zero.
   aws ecs update-service --cluster $CLUSTER --service $SERVICE --desired-count 0
   exit 0
@@ -73,9 +86,8 @@ do
   sleep 1
 done
 
-[ -n "$TWILIOFROM" ] && [ -n "$TWILIOTO" ] && [ -n "$TWILIOAID" ] && [ -n "$TWILIOAUTH" ] && \
-echo "Twilio information set, sending text message that we are online" && \
-curl --silent -XPOST -d "Body=Minecraft Container Online" -d "From=$TWILIOFROM" -d "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" -u "$TWILIOAID:$TWILIOAUTH"
+## Send startup notification message
+send_notification startup
 
 echo "Checking every 60 seconds for active connections to Minecraft"
 COUNTER=0

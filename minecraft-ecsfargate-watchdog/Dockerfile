@@ -1,4 +1,4 @@
-# version 1.0.2
+# version 1.0.3
 # docker pull doctorray/minecraft-ecsfargate-watchdog
 
 FROM ubuntu:20.04
