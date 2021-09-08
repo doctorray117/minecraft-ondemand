@@ -61,7 +61,7 @@ Select your newly created filesystem, and tap the `Access Points` tab.  Create a
   - Owner group IP : `1000`
   - POSIX Permissions : `0755`
 
-Click `Create access point` and then view it within the console.  Note the `Access Point ARN` as you will need it for the IAM policy detailed below.
+Click `Create access point` and then view it within the console.  Note the `Access Point ARN` of the access point and of the filesystem itself as you will need it for the IAM policy detailed below.
 
 ## IAM Round 1
 The IAM Console is where we configure the roles and policies required to give access to the Task running the Minecraft server and the Lambda Function used to start it.
@@ -79,23 +79,28 @@ In the IAM console, create a new role for the ECS Fargate Task.
 Call it something useful, like `ecs.task.minecraft-server`.  Three policies must be linked to this role, but we are only ready to create the first one now.
 
 ### EFS Policy
-The first policy we need to create will allow for read/write access to our new EFS Access Point.  Call it `efs.rw.minecraft-data` and place the ARN from the EFS created earlier in the policy's resource line:
+The first policy we need to create will allow for read/write access to our new EFS Access Point.  Call it `efs.rw.minecraft-data`.  You'll actually need TWO ARNs, one from the filesystem itself and one from the access point, both of which are in the EFS console.  The `Condition` block is optional but is there with [Principle of least privilege] in mind.
 ```json
 {
     "Version": "2012-10-17",
     "Statement": [
         {
+            "Sid": "VisualEditor0",
             "Effect": "Allow",
             "Action": [
                 "elasticfilesystem:ClientMount",
                 "elasticfilesystem:ClientWrite",
                 "elasticfilesystem:DescribeFileSystems"
             ],
-            "Resource": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:access-point/fsap-xxxxxxxxxxxxxxxxx"
+            "Resource": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:file-system/fs-xxxxxxxx",
+            "Condition": {
+                "StringEquals": {
+                    "elasticfilesystem:AccessPointArn": "arn:aws:elasticfilesystem:us-west-2:xxxxxxxxxxxx:access-point/fsap-xxxxxxxxxxxxxxxxx"
+                }
+            }
         }
     ]
-}
-```
+}```
 
 ## Elastic Container Service
 
@@ -400,3 +405,4 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
+  [Principle of least privilege]: <https://en.wikipedia.org/wiki/Principle_of_least_privilege>
