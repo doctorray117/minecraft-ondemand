@@ -161,7 +161,7 @@ Ensure that "Auto-assign public IP" is `ENABLED` (this is default).  Tap `Next`,
 Now that we know the cluster name and service name, we can create the IAM Policy for ECS control, and attach it to the Role we created earlier.
 
 ### ECS Policy
-The Elastic Container Service task that launches the containers needs to be able to control itself, and understand which network interface is attached to it in order to properly update the DNS records, as well as turn itself off when it's not in use.  Within this policy we give full access for ECS to control its own service and correspoinding tasks, and describe all network interfaces in EC2.  Replace the `xxxxxxxxxxxx` below with the appriopriate account ID in your ARN.
+The Elastic Container Service task that launches the containers needs to be able to control itself, and understand which network interface is attached to it in order to properly update the DNS records, as well as turn itself off when it's not in use.  Within this policy we give full access for ECS to control its own service and corresponding tasks, and describe all network interfaces in EC2.  Replace the `xxxxxxxxxxxx` below with the appriopriate account ID in your ARN.
 
 Call this policy `ecs.rw.minecraft-service`.
 ```json
