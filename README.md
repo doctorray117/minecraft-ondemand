@@ -199,32 +199,35 @@ Create a new function using `Author from scratch`.  I've used Python 3.9 but the
 
 Once the function has been created and you're in the code editor, replace the contents of the default lambda_function.py with this:
 ```python
-import json
 import boto3
 
+REGION = 'us-west-2'
+CLUSTER = 'minecraft'
+SERVICE = 'minecraft-server'
+
+
 def lambda_handler(event, context):
+    """Updates the desired count for a service."""
 
-  ecs = boto3.client('ecs', region_name='us-west-2')
-  response = ecs.describe_services(
-    cluster='minecraft',
-    services=[
-      'minecraft-server',
-    ]
-  )
-
-  desired = response["services"][0]["desiredCount"]
-
-  if desired == 0:
-    ecs.update_service(
-      cluster='minecraft',
-      service='minecraft-server',
-      desiredCount=1
+    ecs = boto3.client('ecs', region_name=REGION)
+    response = ecs.describe_services(
+        cluster=CLUSTER,
+        services=[SERVICE],
     )
-    print("Updated desiredCount to 1")
-  else:
-    print("desiredCount already at 1")
+
+    desired = response["services"][0]["desiredCount"]
+
+    if desired == 0:
+        ecs.update_service(
+            cluster=CLUSTER,
+            service=SERVICE,
+            desiredCount=1,
+        )
+        print("Updated desiredCount to 1")
+    else:
+        print("desiredCount already at 1")
 ```
-This file is also in this repository in the `lambda` folder.  Change the region on line 6, if needed, to the location of where your ECS Cluster is.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy we created above to it so that it will actually work.
+This file is also in this repository in the `lambda` folder.  Change the region, cluster, or service on lines 3-5 if needed.  Then, click the `Deploy` button.  Finally, head over to the IAM console, locate the role that was created by this lambda function, and add the `ecs.rw.minecraft-service` policy we created above to it so that it will actually work.
 
 Lambda can be very inexpensive when used sparingly.  For example, this lambda function runs in about 1600ms when starting the container, and in about 500ms if the container is already online.  This means, running at a 128MB memory allocation, it will cost $0.00000336 the first time the server is launched from an off state, and about $0.00000105 every time someone connects to an online server, because anyone connecting will have to perform a DNS lookup which will trigger your lambda function.  If you and four friends played once a day for a month, it would come out to $0.0002583, which is 2.6% of a single penny.
 
