@@ -13,7 +13,7 @@ The process works as follows:
 3. CloudWatch forwards the query to a Lambda function.
 4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
 5. Fargate launches two containers, Minecraft and a watchdog, which updates the DNS record to the new IP
-6. The watchdog optionally sends a text message through Twilio when the server is ready.
+6. The watchdog optionally sends a text message through Twilio and/or publishes to an SNS topic when the server is ready.
 7. Refresh Minecraft server list, server is ready to connect.
 8. After 10 minutes without a connection or 20 minutes after the last client disconnects (customizable) the watchdog sets the desired task count to zero and shuts down.
 
@@ -127,7 +127,7 @@ Scroll back up and add a container.  Call it `minecraft-server`.
   - Any additional stuff you want from [Minecraft Docker Server Docs]
 - Mount Points: `data` mounted to `/data`
 
-Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.
+Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If publishing to an SNS topic, the SNSTOPIC variable must be specified.
 - Image: `doctorray/minecraft-ecsfargate-watchdog` (source for this container within this project if you want to build/host it yourself)
 - Essential: YES checked
 - Environmental Variables
@@ -135,6 +135,7 @@ Add a second container.  Call it `minecraft-ecsfargate-watchdog`.  If using Twil
   - `SERVICE` : `minecraft-server`
   - `DNSZONE` : Route 53 hosted zone ID, this is a 21 digit string you will define in the policy further below.
   - `SERVERNAME` : `minecraft.yourdomainname.com`
+  - `SNSTOPIC` : ARN of your SNS topic (optional)
   - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
   - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
   - `TWILIOAID` : Twilio account ID (optional)
@@ -285,6 +286,27 @@ In the `Create Lambda subscription filter` page, use the following values:
 - Subscription filter name: `minecraft`
 
 Click `Start streaming`.
+
+## Optional SNS Notifications
+You can receive a text or email or anything else you want to consume via Amazon SNS, if Twilio isn't your thing.  This also allows this to be a 100% AWS solution.
+
+From the SNS console, create a topic called `minecraft-notifications`.  Also at your convenience, create a Subscription to the topic to a destination of your choice.  Email is easy and free, SMS is beyond the scope of this documentation but there's plenty of resources out there to help you set it up.
+
+Note the ARN of your new topic and create a new IAM policy called `sns.publish.minecraft-notifications` with the following definition:
+
+```json { 
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": "sns:Publish",
+            "Resource": "arn:aws:sns:us-west-2:xxxxxxxxxxxx:minecraft-notifications"
+        }
+    ]
+}
+```
+
+Add this policy to your task role, and populate the `SNSTOPIC` environment variable on the watchdog container to begin receiving SNS notifications on server ready and shutdown.
 
 # Usage and Customization
 To use your new server, open Minecraft Multiplayer, add your new server, and join.  It will fail at first but then everything comes online and you can join your new world!  You may notice that you don't have many permissions or ability to customize a lot of things yet, so let's dig into how to edit the relevant files!
