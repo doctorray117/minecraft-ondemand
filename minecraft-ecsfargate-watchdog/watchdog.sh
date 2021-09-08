@@ -102,7 +102,7 @@ done
 
 echo "We believe a connection has been made, switching to shutdown watcher"
 COUNTER=0
-while [ $COUNTER -le $SHUTDOWMIN ]
+while [ $COUNTER -le $SHUTDOWNMIN ]
 do
   CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
   if [ $CONNECTIONS -lt 1 ]
