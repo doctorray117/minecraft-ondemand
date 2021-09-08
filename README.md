@@ -399,7 +399,7 @@ Is your function running?  We didn't design a "test" functionality for it but yo
 Can you start your server manually by setting desired count to 1?  Here's some possible jumping off points for issues:
 
 #### Service won't launch task
-Check the execution roles, and that they have the right permissions.  Check the container names for typos.  Check that you selected multiple subnets in the task definition, and that it's using the LATEST version.
+Check the execution roles, and that they have the right permissions.  Check the container names for typos.  Check that you selected multiple subnets in the task definition, and that it's using the LATEST version.  If you updated the task definition, did you update the Service to use the new task definition version?
 
 #### Containers won't switch to RUNNING state
 Check all of the above, but also ensure you're using an EFS Access Point with the specified auto-create permissions.  The minecraft container will fail if it can't mount the data volume.
