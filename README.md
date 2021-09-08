@@ -237,7 +237,7 @@ Add an A record with a 30 second TTL with a unique name that you will use to con
 ### Query Logging
 The magic that allows the on-demand idea to work without any "always on" infrastructure comes in here, with Query logging.  Every time someone looks up a DNS record for your domain, it will hit Route 53 as the authoritative DNS server.  These queries can be logged and actions performed from them.  From your hosted zone, click `Configure query logging` on the top right.
 
-In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/Route 53/yourdomainname.com` and click `Create`.
+In `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/route53/yourdomainname.com` and click `Create`.
 
 ## IAM Route 53 Policy
 This policy gives permission to our ECS task to update the A record associated with our minecraft server.  Retrieve the hosted zone identifier from Route 53 and place it in the Resource line within this policy.  Call it `route53.rw.yourdomainname`.
@@ -250,16 +250,16 @@ Note: This will give your container access to change _all_ records within the ho
         {
             "Effect": "Allow",
             "Action": [
-                "Route 53:GetHostedZone",
-                "Route 53:ChangeResourceRecordSets",
-                "Route 53:ListResourceRecordSets"
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets",
+                "route53:ListResourceRecordSets"
             ],
-            "Resource": "arn:aws:Route 53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
+            "Resource": "arn:aws:route53:::hostedzone/XXXXXXXXXXXXXXXXXXXXX"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "Route 53:ListHostedZones"
+                "route53:ListHostedZones"
             ],
             "Resource": "*"
         }
@@ -271,7 +271,7 @@ Attach this policy to your ECS Task Role.
 ## CloudWatch
 The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
 
-Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/Route 53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.  Optionally, modify the retention period to delete the logs after a few days so they don't accumulate forever.
+Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` -> `Log groups` -> and find the `/aws/route53/yourdomainname.com` Log group that we created in the Route 53 Query Log Configuration.  Optionally, modify the retention period to delete the logs after a few days so they don't accumulate forever.
 
 Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
 
@@ -401,7 +401,7 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
-  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-Route 53-hosted-zone>
+  [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
