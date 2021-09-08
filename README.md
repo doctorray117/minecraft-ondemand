@@ -99,7 +99,8 @@ The first policy we need to create will allow for read/write access to our new E
             }
         }
     ]
-}```
+}
+```
 
 ## Elastic Container Service
 
