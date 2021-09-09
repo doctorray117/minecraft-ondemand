@@ -33,8 +33,13 @@ function zero_service ()
   exit 0
 }
 
-## upon SIGTERM set the service desired count to zero
-trap zero_service SIGTERM
+function sigterm ()
+{
+  ## upon SIGTERM set the service desired count to zero
+  echo "Received SIGTERM, terminating task..."
+  zero_service
+}
+trap sigterm SIGTERM
 
 ## get task id from the Fargate metadata
 TASK=$(curl -s ${ECS_CONTAINER_METADATA_URI_V4}/task | jq -r '.TaskARN' | awk -F/ '{ print $NF }')
