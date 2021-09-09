@@ -1,14 +1,10 @@
-# version 1.0.3
+# version 1.1.0
 # docker pull doctorray/minecraft-ecsfargate-watchdog
 
-FROM ubuntu:20.04
+FROM amazon/aws-cli
 
-RUN apt-get update
-RUN apt-get install -y curl unzip less net-tools coreutils jq gawk
-RUN apt-get dist-upgrade -u -y
-RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-RUN unzip awscliv2.zip
-RUN ./aws/install
+RUN yum install -y net-tools jq && \
+    yum clean all
 
 COPY ./watchdog.sh .
 
