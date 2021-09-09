@@ -23,8 +23,8 @@ The process works as follows:
 ## Requirements
 - AWS Account
 - Domain name with public DNS served from Route 53.  Does not need to be registered through Route 53.
-- Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
-- Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
+- Minecraft client (either Java or Bedrock editions)
+- Use of the excellent [Minecraft Docker] or [Minecraft Bedrock Docker] server images (used within task definition, no direct download required)
 
 ## Cost Breakdown
 - Link to [AWS Estimate] assuming 20 hours a month usage.
@@ -120,8 +120,12 @@ Create a new Task Definition called `minecraft-server`.
 Skip containers temporarily and go down to Volumes.  Add a volume, call it `data`, volume type EFS.  Select the filesystem id created above, the access point id created above, enable `Encryption in transit` and click Add.
 
 Scroll back up and add a container.  Call it `minecraft-server`.
-- Image: `itzg/minecraft-server`
-- Port Mappings: `25565 TCP`
+- Images: 
+  - Java edition: `itzg/minecraft-server`
+  - Bedrock edition: `itzg/minecraft-bedrock-server`
+- Port Mappings: 
+  - Java edition: `25565 TCP`
+  - Bedrock edition: `19132 UDP`
 - Essential: NOT Checked (task stops with the watchdog container)
 - Environment Variables.
   - `EULA` : `TRUE`
@@ -426,6 +430,7 @@ Open an issue, fork the repo, send me a pull request or a message.
 
   [Default VPC]: <https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html>
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
+  [Minecraft Bedrock Docker]: <https://hub.docker.com/r/itzg/minecraft-bedrock-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
   [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
