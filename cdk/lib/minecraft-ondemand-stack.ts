@@ -1,11 +1,17 @@
-import * as cdk from '@aws-cdk/core';
+import { Vpc } from '@aws-cdk/aws-ec2';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 
-export class MinecraftStack extends cdk.Stack
+export interface MinecraftStackProps extends StackProps
 {
-  constructor(scope: cdk.Construct, id: string, props?: cdk.StackProps)
-  {
-    super(scope, id, props);
+    vpcId: string;
+}
 
-    // The code that defines your stack goes here
-  }
+export class MinecraftStack extends Stack
+{
+    constructor(scope: Construct, id: string, props: MinecraftStackProps)
+    {
+        super(scope, id, props);
+
+        const vpc = Vpc.fromLookup(this, "MinecraftVpc", { vpcId: props.vpcId });
+    }
 }
