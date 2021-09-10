@@ -30,7 +30,7 @@
     "@aws-cdk/core" "1.122.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-ec2@^1.122.0":
+"@aws-cdk/aws-ec2@1.122.0", "@aws-cdk/aws-ec2@^1.122.0":
   version "1.122.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-ec2/-/aws-ec2-1.122.0.tgz#31b2280629404a829eb639e8e373221613a1aded"
   integrity sha512-bKJGgd3KruFeOyP/5Fc/Ufr4BHB9+xVpXVGqCeKEInkq0f4ttWhHbfKRJdYEUBEF0xwDQEj7RM6EgaV0fdfb9g==
@@ -46,6 +46,19 @@
     "@aws-cdk/core" "1.122.0"
     "@aws-cdk/cx-api" "1.122.0"
     "@aws-cdk/region-info" "1.122.0"
+    constructs "^3.3.69"
+
+"@aws-cdk/aws-efs@^1.122.0":
+  version "1.122.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-efs/-/aws-efs-1.122.0.tgz#b0fba574ccc35f4c6989828f2234c88b8e8e6566"
+  integrity sha512-CFvqAVv2BX31j+tGxM2a8CaTbf2QqMoeegORRJzipykeX+wCPu/5nYA7jWOXlCLYZ2MnLRHaAZzzVtLRvgNSWw==
+  dependencies:
+    "@aws-cdk/aws-ec2" "1.122.0"
+    "@aws-cdk/aws-iam" "1.122.0"
+    "@aws-cdk/aws-kms" "1.122.0"
+    "@aws-cdk/cloud-assembly-schema" "1.122.0"
+    "@aws-cdk/core" "1.122.0"
+    "@aws-cdk/cx-api" "1.122.0"
     constructs "^3.3.69"
 
 "@aws-cdk/aws-events@1.122.0":
