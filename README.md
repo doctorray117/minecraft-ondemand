@@ -172,7 +172,7 @@ This policy will allow for management of the Elastic Container Service tasks and
 
 Replace the `zzzzzzzzzzzz` below with the appriopriate account ID in your ARN.  If you are not using the default cluster name or service name we decided above, change those as well.  Change the region if necessary.
 
-Call this policy `ecs.rw.minecraft-service`.
+Call this policy `ecs.rw.minecraft-service`
 ```json
 {
     "Version": "2012-10-17",
@@ -205,7 +205,7 @@ This policy gives permission to our ECS task to update the DNS `A` record associ
 
 Place the hosted zone identifier from our checklist and place it in the Resource line within this policy where the XXX's are.
 
-Call this policy `route53.rw.yourdomainname`.
+Call this policy `route53.rw.yourdomainname`
 ```json
 {
     "Version": "2012-10-17",
@@ -296,36 +296,36 @@ Under `Advanced container configuration` make these changes:
     - Source volume : `data`
     - Container path: `/data`
 
-Click `Add`.
+Click `Add` and then click `Add container` again to add a second container to the list.  Use defaults except for these specifics:
 
-Click `Add container` to add a second container to the list.  Use defaults except for these specifics:
 - Container name: `minecraft-ecsfargate-watchdog`
 - Image: `doctorray/minecraft-ecsfargate-watchdog` (source for this container within this project if you want to build/host it yourself)
 
 Under `Advanced container configuration` make these changes:
-- Essential: YES checked
-- Environmental Variables
+- Essential: YES checked (default)
+- Environmental Variables (required)
   - `CLUSTER` : `minecraft`
   - `SERVICE` : `minecraft-server`
   - `DNSZONE` : Route 53 hosted zone ID from your checklist
   - `SERVERNAME` : `minecraft.yourdomainname.com`
-  - `STARTUPMIN` : Number of minutes to wait for a connection after starting before terminating (optional, default 10)
-  - `SHUTDOWNMIN` : Number of minutes to wait after the last client disconnects before terminating (optional, default 20)
-  - `SNSTOPIC` : Full ARN of your SNS topic (optional)
-  - `TWILIOFROM` : `+1XXXYYYZZZZ` (optional, your twilio number)
-  - `TWILIOTO` : `+1XXXYYYZZZZ` (optional, your cell phone to get a text on)
-  - `TWILIOAID` : Twilio account ID (optional)
-  - `TWILIOAUTH` : Twilio auth code (optional)
+- Environmental Variables (optional)
+  - `STARTUPMIN` : Number of minutes to wait for a connection after starting before terminating (default 10)
+  - `SHUTDOWNMIN` : Number of minutes to wait after the last client disconnects before terminating (default 20)
+  - `SNSTOPIC` : Full ARN of your SNS topic (if using SNS)
+  - `TWILIOFROM` : `+1XXXYYYZZZZ` (your twilio number)
+  - `TWILIOTO` : `+1XXXYYYZZZZ` (your cell phone to get a text on)
+  - `TWILIOAID` : Twilio account ID
+  - `TWILIOAUTH` : Twilio auth code
 
 If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If publishing to an SNS topic, the `SNSTOPIC` variable must be specified.
 
 Click `Add` and then `Create` to create the task.
 
 ### Cluster
-Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this, use the default or same one you already created your EFS in.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to view CPU or Memory usage.
+Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this, use the default or same one you already created your EFS in.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to review CPU or Memory usage.
 
 ### Service
-Within your `minecraft` cluster, create a new Service.  Under Capacity Provider, you've got a choice.  If you leave it default, your tasks will launch under the `FARGATE` strategy by default, which currently will run about 5 cents per hour.  You can switch it to Custom, enable only `FARGATE_SPOT`, and pay 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
+Within your `minecraft` cluster, create a new Service.  Click `Switch to capacity provider`.  Click `Add another provider` and now you've got a choice.  Tasks can launch under the `FARGATE` strategy, which currently will run about 5 cents per hour, or they can launch under `FARGATE_SPOT`, and cost 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
 
 Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this will prevent it from running now before it is ready, and the other processes adjust it later on demand).  Everything else on this page is fine as default. Hit Next.
 
