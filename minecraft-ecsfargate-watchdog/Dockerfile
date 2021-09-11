@@ -3,7 +3,7 @@
 
 FROM amazon/aws-cli
 
-RUN yum install -y net-tools jq go && \
+RUN yum install -y net-tools jq && \
     yum clean all
 
 COPY ./watchdog.sh .
