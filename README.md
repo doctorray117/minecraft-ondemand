@@ -270,7 +270,7 @@ In the roles list, find the role created by the lambda function earlier.  It wil
 The final task we need to do is create the ECS task, cluster, and service.
 
 ### Task Definition
-Create a new Task Definition called of `FARGATE` launch type.  In the configuration wizard, use these options:
+Create a new Task Definition of `FARGATE` launch type.  In the configuration wizard, use these options:
 - Task Definition Name: `minecraft-server`
 - Task Role: `ecs.task.minecraft-server`
 - Network Mode: `awsvpc` (default)
