@@ -1,0 +1,24 @@
+{
+  "name": "minecraft-ondemand",
+  "version": "1.0.0",
+  "bin": {
+    "cdk": "bin/cdk.js"
+  },
+  "scripts": {
+    "prebuild": "npm install",
+    "build": "cdk synth",
+    "deploy": "cdk deploy --all"
+  },
+  "devDependencies": {
+    "@types/jest": "^26.0.10",
+    "@types/node": "10.17.27",
+    "aws-cdk": "2.0.0-rc.14",
+    "ts-node": "^9.0.0",
+    "typescript": "~3.9.7"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.0.0-rc.14",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.16"
+  }
+}

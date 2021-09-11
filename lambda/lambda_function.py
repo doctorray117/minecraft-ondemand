@@ -1,8 +1,12 @@
+import os
 import boto3
 
-REGION = 'us-west-2'
-CLUSTER = 'minecraft'
-SERVICE = 'minecraft-server'
+REGION = os.environ.get('REGION')
+CLUSTER = os.environ.get('CLUSTER')
+SERVICE = os.environ.get('SERVICE')
+
+if REGION is None or CLUSTER is None or SERVICE is None:
+    raise ValueError("Missing environment variables")
 
 
 def lambda_handler(event, context):
