@@ -325,15 +325,40 @@ Click `Add` and then `Create` to create the task.
 Create a new "Networking Only" Cluster.  Call it `minecraft`.  Don't create a dedicated VPC for this, use the default or same one you already created your EFS in.  Enabling Container Insights is optional but recommended for troubleshooting later, especially if you expect a lot of people to potentially connect and you want to review CPU or Memory usage.
 
 ### Service
-Within your `minecraft` cluster, create a new Service.  Click `Switch to capacity provider`.  Click `Add another provider` and now you've got a choice.  Tasks can launch under the `FARGATE` strategy, which currently will run about 5 cents per hour, or they can launch under `FARGATE_SPOT`, and cost 1.5 cents per hour.  While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
+Within your `minecraft` cluster, create a new Service.
+- Configure serivce
+  - Launch type: Click `Switch to capacity provider`
+  - Capacity provider strategy: `Custom strategy`
+  - Click `Add another provider`
+  - Provider 1: You've got a choice, details in next paragraph
+    - `FARGATE`: 4.9 cents per hour of use with this CPU/Memory configuration
+    - `FARGATE_SPOT`: 1.49 cents per hour of use with this CPU/Memory configuration
+  - Task Definition
+    - Family: `minecraft-server`
+    - Revision: The latest version (Don't forget to update it here if you revise your task definition later)
+  - Platform version: `LATEST`
+  - Cluster: `minecraft`
+  - Service name: `minecraft-server` (The service name from our checklist)
+  - Number of tasks: `0` (The DNS+Lambda pipeline will change this to 1 on demand)
 
-Select your task definition and version created above.  Platform version can be `LATEST` or `1.4.0`.  Call the service name `minecraft-server` to match the policies and lambda function.  Number of tasks should be 0 (this will prevent it from running now before it is ready, and the other processes adjust it later on demand).  Everything else on this page is fine as default. Hit Next.
+`FARGATE_SPOT` is significantly cheaper but AWS can terminate your instance at any time if they need the capacity.  The watchdog is designed to intercept this termination command and shut down safely, so it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption.
 
-Select your VPC, and select all of the subnets individually, which will maximize your success of running Fargate Spot tasks.
+Click `Next step`
 
-For Security Group, click edit.  Let it create a new security group.  Change the default HTTP rule to `Custom TCP` and change the port to `25565` from `Anywhere`, which will allow anyone to connect to the server once it is online (they have to know the name of course!)  You could also restrict by known IP addresses but this is cumbersome to update regularly.  Tap save.
+- Configure Network
+  - Cluster VPC: The VPC that your EFS is in (you probably only have one anyway)
+  - Subnets: Pick ALL of them, one at a time (must match the Subnets that EFS was created in, which by default is all of them)
+  - Security Group: Click `Edit`
+    - Create new security gruop
+    - Security group name: Default is fine or call it `minecraft-server`
+    - Inbound rules for security group
+      - Change `HTTP` to `Custom TCP`
+      - Port range: `25565`
+      - Source: `Anywhere` is fine.  Customizing this to specific source IPs is beyond the scope of this document.
+      - Click `Save`
+    - Auto-assign public IP: `ENABLED` (default)
 
-Ensure that "Auto-assign public IP" is `ENABLED` (this is default).  Tap `Next`, `Next`, and `Create Service`.
+Tap `Next`, `Next`, and `Create Service`.
 
 ## CloudWatch
 The final step to link everything together is to configure CloudWatch to start your server when you try to connect to it.
@@ -343,24 +368,17 @@ Open the CloudWatch console and change to the `us-east-1` region.  Go to `Logs` 
 Go to the `Subscription filters` tab, click `Create` and then `Create Lambda subscription filter`.
 
 In the `Create Lambda subscription filter` page, use the following values:
-- Lambda Function : `minecraft-launcher` or whatever you called it.
+- Lambda Function : `minecraft-launcher`
 - Log format : `Other`
 - Subscription filter pattern: `"minecraft.yourdomainname.com"` (or just simply `minecraft` -- this is what it's looking for to fire off the lambda)
 - Subscription filter name: `minecraft`
 
 Click `Start streaming`.
 
-
-
-
-
-
-
-
-
-
 # Usage and Customization
-To use your new server, open Minecraft Multiplayer, add your new server, and join.  It will fail at first but then everything comes online and you can join your new world!  You may notice that you don't have many permissions or ability to customize a lot of things yet, so let's dig into how to edit the relevant files!
+Launch your server the first time by visiting your server name in a web browser, which won't load anything but it will trigger the actions.  You can watch it start up by refreshing the ECS console page within your `minecraft` cluster.  Watch the `Desired tasks` change from 0 to 1, then on the `Tasks` tab select our task and refresh until both containers say `RUNNING`.  You can also go to the `Logs` tab here and refresh the container logs to see the output of the initial world creation, etc.
+
+To use your new server, open Minecraft Multiplayer, add your new server, and join.  It will fail at first if the server is not started, but then everything comes online and you can join your new world!  You may notice that you don't have many permissions or ability to customize a lot of things yet, so let's dig into how to edit the relevant files!
 
 ## Option 1: Mount EFS Directly
 This option is the easiest for folks that are comfortable in the Linux command line, so I'm not going to step-by-step it.  But basically, launch an AWS Linux v2 AMI in EC2 with bare-minimum specs, log into it, mount the EFS Access Point, and use your favorite command line text editor to change around server.properties, the ops.json, whitelists, whatever, and then re-launch your server with the new configuration.
@@ -482,4 +500,3 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
-  [Principle of least privilege]: <https://en.wikipedia.org/wiki/Principle_of_least_privilege>
