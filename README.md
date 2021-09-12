@@ -22,7 +22,7 @@ The process works as follows:
 
 ## Requirements
 - AWS Account
-- Domain name with public DNS served from Route 53.  Does not need to be registered through Route 53.
+- Domain name with public [DNS served from Route 53].  Does not need to be registered through Route 53.  
 - Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
 - Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
 
@@ -496,7 +496,9 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
   [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
+  [DNS served from Route 53]: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring.html>
   [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
+
