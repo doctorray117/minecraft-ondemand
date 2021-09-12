@@ -8,7 +8,7 @@
 
 ## Bugs
 
-- [ ] Sort out task permissions errors
+- [x] Sort out task permissions errors
 - [ ] Investigate 3x event creation on lambda
 - [ ] Update retention settings for resources not removed by `cdk destroy`
 
@@ -25,6 +25,7 @@
 - [ ] Modularize components
 - [ ] Additional docstrings
 - [ ] Create documentation
+- [ ] Add "requireApproval": "never" to cdk.json
 
 ## Enhancements
 

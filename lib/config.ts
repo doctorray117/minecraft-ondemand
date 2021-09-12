@@ -1,4 +1,5 @@
 // TODO: Add .env handling and default values
+// TODO: Add additional params for [Minecraft Docker Server Docs](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
 export const config = {
   /**
    * Domain to create a hosted zone and be used as your minecraft server address.
@@ -10,7 +11,7 @@ export const config = {
    *
    * @default "us-west-2"
    */
-  SERVER_REGION: 'us-west-2',
+  SERVER_REGION: 'us-east-1', // TODO Change before commit
   /**
    * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
    *

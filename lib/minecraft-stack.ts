@@ -7,6 +7,10 @@ import {
   aws_iam as iam,
   aws_ecs as ecs,
   aws_ssm as ssm,
+  aws_logs as logs,
+  RemovalPolicy,
+  Fn,
+  Arn,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { constants } from './constants';
@@ -16,7 +20,6 @@ import { SSMParameterReader } from './ssm-parameter-reader';
 export class MinecraftStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
-    const domainName = config.DOMAIN_NAME;
 
     const vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: 3,
@@ -24,6 +27,7 @@ export class MinecraftStack extends Stack {
 
     const fileSystem = new efs.FileSystem(this, 'FileSystem', {
       vpc,
+      removalPolicy: RemovalPolicy.SNAPSHOT,
     });
 
     const accessPoint = new efs.AccessPoint(this, 'AccessPoint', {
@@ -70,38 +74,51 @@ export class MinecraftStack extends Stack {
     const cluster = new ecs.Cluster(this, 'Cluster', {
       clusterName: constants.CLUSTER_NAME,
       vpc,
-      containerInsights: true,
+      containerInsights: true, // TODO: Add config for container insights
+      enableFargateCapacityProviders: true,
     });
 
-    const taskDefinition = new ecs.TaskDefinition(this, 'TaskDefinition', {
-      compatibility: ecs.Compatibility.FARGATE,
-      networkMode: ecs.NetworkMode.AWS_VPC,
-      taskRole: ecsTaskRole,
-      memoryMiB: config.TASK_MEMORY,
-      cpu: config.TASK_CPU,
-      volumes: [
-        {
-          name: constants.ECS_VOLUME_NAME,
-          efsVolumeConfiguration: {
-            fileSystemId: fileSystem.fileSystemId,
-            transitEncryption: 'ENABLED',
+    const taskDefinition = new ecs.FargateTaskDefinition(
+      this,
+      'TaskDefinition',
+      {
+        taskRole: ecsTaskRole,
+        memoryLimitMiB: +config.TASK_MEMORY,
+        cpu: +config.TASK_CPU,
+        volumes: [
+          {
+            name: constants.ECS_VOLUME_NAME,
+            efsVolumeConfiguration: {
+              fileSystemId: fileSystem.fileSystemId,
+              transitEncryption: 'ENABLED',
+              authorizationConfig: {
+                accessPointId: accessPoint.accessPointId,
+                iam: 'ENABLED',
+              },
+            },
           },
-        },
-      ],
-    });
+        ],
+      }
+    );
 
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
       'ServerContainer',
       {
-        containerName: constants.CONTAINER_NAME,
+        containerName: constants.MC_SERVER_CONTAINER_NAME,
         image: ecs.ContainerImage.fromRegistry('itzg/minecraft-server'),
-        portMappings: [{ containerPort: 25565, protocol: ecs.Protocol.TCP }],
+        portMappings: [
+          { containerPort: 25565, hostPort: 25565, protocol: ecs.Protocol.TCP },
+        ],
         environment: {
           EULA: 'TRUE',
         },
         essential: false,
-        taskDefinition: taskDefinition,
+        taskDefinition,
+        logging: new ecs.AwsLogDriver({
+          logRetention: logs.RetentionDays.THREE_DAYS,
+          streamPrefix: constants.MC_SERVER_CONTAINER_NAME,
+        }), // TODO: Add logging as optional with debug command
       }
     );
 
@@ -135,6 +152,7 @@ export class MinecraftStack extends Stack {
             capacityProvider:
               config.USE_FARGATE_SPOT === 'true' ? 'FARGATE_SPOT' : 'FARGATE',
             weight: 1,
+            base: 1,
           },
         ],
         taskDefinition: taskDefinition,
@@ -159,7 +177,7 @@ export class MinecraftStack extends Stack {
       this,
       'WatchDogContainer',
       {
-        containerName: 'minecraft-ecsfargate-watchdog',
+        containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
         image: ecs.ContainerImage.fromAsset(
           path.resolve(__dirname, '../minecraft-ecsfargate-watchdog/')
         ),
@@ -179,6 +197,10 @@ export class MinecraftStack extends Stack {
           STARTUPMIN: config.STARTUP_MINUTES,
           SHUTDOWNMIN: config.SHUTDOWN_MINUTES,
         },
+        logging: new ecs.AwsLogDriver({
+          logRetention: logs.RetentionDays.THREE_DAYS,
+          streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
+        }), // TODO: Add logging as optional with debug command
       }
     );
 
@@ -190,7 +212,12 @@ export class MinecraftStack extends Stack {
           actions: ['ecs:*'],
           resources: [
             minecraftServerService.serviceArn,
-            taskDefinition.taskDefinitionArn, // TODO: Verify that the resource for the task ends in /*
+            // arn:aws:ecs:<region>:<account_number>:task/minecraft/
+            Fn.join('/', [
+              Arn.format({ resource: 'task', service: 'ecs' }, this),
+              constants.CLUSTER_NAME,
+              '*',
+            ]),
           ],
         }),
         new iam.PolicyStatement({
