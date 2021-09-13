@@ -11,7 +11,7 @@ export const config = {
    *
    * @default "us-west-2"
    */
-  SERVER_REGION: 'us-east-1', // TODO Change before commit
+  SERVER_REGION: 'us-west-2',
   /**
    * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
    *
