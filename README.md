@@ -18,11 +18,11 @@ The process works as follows:
 8. After 10 minutes without a connection or 20 minutes after the last client disconnects (customizable) the watchdog sets the desired task count to zero and shuts down.
 
 ## Diagram
-![Basic Workflow](diagrams/aws_architecture.drawio.png)
+![Basic Workflow](docs/diagrams/aws_architecture.drawio.png)
 
 ## Requirements
 - AWS Account
-- Domain name with public [DNS served from Route 53].  Does not need to be registered through Route 53.  
+- Domain name with public [DNS served from Route 53].  Does not need to be registered through Route 53.
 - Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
 - Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
 
@@ -243,7 +243,7 @@ Replace the zzz's with your account ID, and adjust the topic name or the region 
 
 Call this policy `sns.publish.minecraft-notifications`
 ```json
-{ 
+{
     "Version": "2012-10-17",
     "Statement": [
         {
@@ -287,7 +287,7 @@ Create a new Task Definition of `FARGATE` launch type.  In the configuration wiz
 Skip `Container Definitions` temporarily and scroll further down to Volumes.  Click `Add volume`, call it `data`, volume type EFS.  Select the filesystem id from the dropdown that we created above, the access point id we created above, and check the box for `Encryption in transit` and click Add.
 
 Scroll back up and click `Add container`.  Use defaults except for these specifics:
-- Container name: `minecraft-server` 
+- Container name: `minecraft-server`
 - Image: `itzg/minecraft-server`
 - Port Mappings: `25565 TCP`
 
