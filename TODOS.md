@@ -10,7 +10,7 @@
 
 - [x] Sort out task permissions errors
 - [x] Investigate 3x event creation on lambda
-- [ ] Update retention settings for resources not removed by `cdk destroy`
+- [x] Update retention settings for resources not removed by `cdk destroy`
 
 ## Customization
 

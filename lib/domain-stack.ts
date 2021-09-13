@@ -17,6 +17,7 @@ import { Construct } from 'constructs';
 import { constants } from './constants';
 import { config } from './config';
 import { CWGlobalResourcePolicy } from './cw-global-resource-policy';
+import { RetentionDays } from 'aws-cdk-lib/lib/aws-logs';
 
 export class DomainStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -26,11 +27,11 @@ export class DomainStack extends Stack {
 
     const queryLogGroup = new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/aws/route53/${subdomain}`,
-      retention: 3,
+      retention: RetentionDays.THREE_DAYS,
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
-    // Create policy to allow route53 to log to cloudwatch
+    /* Create policy to allow route53 to log to cloudwatch */
     const policyName = 'cw.r.route53-dns';
     const dnsWriteToCw = [
       new iam.PolicyStatement({
@@ -61,20 +62,24 @@ export class DomainStack extends Stack {
       domainName: config.DOMAIN_NAME,
     });
 
-    const subdomainHostedZone = new route53.HostedZone(this, 'SubdomainHostedZone', {
-      zoneName: subdomain,
-      queryLogsLogGroupArn: queryLogGroup.logGroupArn,
-    });
+    const subdomainHostedZone = new route53.HostedZone(
+      this,
+      'SubdomainHostedZone',
+      {
+        zoneName: subdomain,
+        queryLogsLogGroupArn: queryLogGroup.logGroupArn,
+      }
+    );
 
-    // Resource policy for CloudWatch Logs is needed before the zone can be created
+    /* Resource policy for CloudWatch Logs is needed before the zone can be created */
     subdomainHostedZone.node.addDependency(cloudwatchLogResourcePolicy);
-    // Ensure we hvae an existing hosted zone before creating our delegated zone
+    /* Ensure we hvae an existing hosted zone before creating our delegated zone */
     subdomainHostedZone.node.addDependency(rootHostedZone);
 
     const nsRecord = new route53.NsRecord(this, 'NSRecord', {
       zone: rootHostedZone,
       values: subdomainHostedZone.hostedZoneNameServers as string[],
-      recordName: subdomain
+      recordName: subdomain,
     });
 
     const aRecord = new route53.ARecord(this, 'ARecord', {
@@ -95,7 +100,7 @@ export class DomainStack extends Stack {
       zone: subdomainHostedZone,
     });
 
-    // Set dependency on A record to ensure it is removed first on deletion
+    /* Set dependency on A record to ensure it is removed first on deletion */
     aRecord.node.addDependency(subdomainHostedZone);
 
     const launcherLambda = new lambda.Function(this, 'LauncherLambda', {
@@ -120,7 +125,7 @@ export class DomainStack extends Stack {
       ),
       action: 'lambda:InvokeFunction',
       sourceAccount: this.account,
-      sourceArn: queryLogGroup.logGroupArn, // TODO: Validate if this needs ':*' suffix
+      sourceArn: queryLogGroup.logGroupArn,
     });
 
     /**

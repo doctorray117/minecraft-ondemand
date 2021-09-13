@@ -4,7 +4,7 @@ export const config = {
   /**
    * Domain name of existing Route53 Hosted Zone
    */
-  DOMAIN_NAME: 'example.com',
+  DOMAIN_NAME: process.env.DOMAIN_NAME || '',
   /**
    * Name of the subdomain part to be used for creating a delegated hosted zone
    * (minecraft.example.com) and an NS record on your existing (example.com)
@@ -12,13 +12,13 @@ export const config = {
    *
    * @default "minecraft"
    */
-  SUBDOMAIN_PART: 'minecraft',
+  SUBDOMAIN_PART: process.env.SUBDOMAIN_PART || 'minecraft',
   /**
    * The AWS region to deploy your minecraft server in.
    *
    * @default "us-east-1"
    */
-  SERVER_REGION: 'us-east-1',
+  SERVER_REGION: process.env.SERVER_REGION || 'us-east-1',
   /**
    * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
    *

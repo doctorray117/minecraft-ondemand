@@ -1,4 +1,5 @@
 import { custom_resources as cr, aws_iam as iam, Duration } from 'aws-cdk-lib';
+import { RetentionDays } from 'aws-cdk-lib/lib/aws-logs';
 import { Construct } from 'constructs';
 
 interface CWGlobalResourcePolicyProps {
@@ -53,6 +54,7 @@ export class CWGlobalResourcePolicy extends cr.AwsCustomResource {
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
         resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
       }),
+      logRetention: RetentionDays.THREE_DAYS,
     });
   }
 }
