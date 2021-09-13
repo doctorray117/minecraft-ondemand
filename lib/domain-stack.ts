@@ -76,13 +76,9 @@ export class DomainStack extends Stack {
           },
         },
         timeout: Duration.minutes(2),
-        policy: cr.AwsCustomResourcePolicy.fromStatements([
-          new iam.PolicyStatement({
-            actions: ['logs:PutResourcePolicy', 'logs:DeleteResourcePolicy'],
-            // Resource Policies are global in CloudWatch Logs per-region, per-account.
-            resources: ['*'],
-          }),
-        ]),
+        policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+          resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+        }),
       }
     );
 

@@ -23,15 +23,9 @@ export class SSMParameterReader extends cr.AwsCustomResource {
 
     super(scope, name, {
       onUpdate: ssmAwsSdkCall,
-      policy: {
-        statements: [
-          new iam.PolicyStatement({
-            effect: iam.Effect.ALLOW,
-            actions: ['ssm:GetParameter'],
-            resources: ['*'],
-          }),
-        ],
-      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+        resources: cr.AwsCustomResourcePolicy.ANY_RESOURCE,
+      }),
     });
   }
 
