@@ -25,11 +25,10 @@
 - [ ] Modularize components
 - [ ] Additional docstrings
 - [ ] Create documentation
-- [ ] Add "requireApproval": "never" to cdk.json
+- [x] Add "requireApproval": "never" to cdk.json
 
 ## Enhancements
 
 - [ ] Add optional billing alert
 - [ ] EFS -> S3 DataSync
 - [ ] Integration testing
-
