@@ -6,7 +6,7 @@
   },
   "scripts": {
     "prebuild": "npm install",
-    "build": "cdk synth",
+    "build": "cdk bootstrap",
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all"
   },
