@@ -18,7 +18,7 @@ export class SSMParameterReader extends cr.AwsCustomResource {
       },
       region,
       // Update physical id to always fetch the latest version
-      physicalResourceId: { id: Date.now().toString() },
+      physicalResourceId: { id: `SSMParam-${parameterName}-${Date.now()}` },
     };
 
     super(scope, name, {
