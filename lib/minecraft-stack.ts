@@ -164,6 +164,9 @@ export class MinecraftStack extends Stack {
       }
     );
 
+    // Allow access to EFS from Fargate service security group
+    fileSystem.connections.allowDefaultPortFrom(minecraftServerService.connections)
+
     const hostedZoneId = new SSMParameterReader(
       this,
       'Route53HostedZoneIdReader',
