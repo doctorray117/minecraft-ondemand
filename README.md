@@ -43,6 +43,7 @@ To simplify the procedure, your ECS cluster name, service name, and sns topic na
 Things you need to go find because they'll be used in the procedure are:
 - AWS Account ID.  This is a 12 digit number (at least mine is).  [Finding your AWS account ID].  Put this in the IAM policies where I've put `zzzzzzzzzzzz`
 - Hosted Zone ID.  This is a variable length string tied to your domain name in the Route 53 console.
+- VPC IPv4 CIDR.  It looks like (and very well may be) `172.31.0.0/16`.  Find it by opening the VPC console, tapping on `Your VPCs` and looking in the `IPv4 CIDR` column.
 
 Things you will locate as you go along and will need during IAM policy creation:
 - EFS File System ID
@@ -56,7 +57,7 @@ Double check the region in anything you're copy/pasting.
 ## VPC
 A VPC with Subnets must exist in order for Fargate tasks to launch and for EFS shares to be mounted.  A subnet should exist in each availability zone so that Fargate (and Fargate Spot, if used) can properly launch the tasks in an AZ with plenty of capacity.  A security group for our task is required but is easiest configured when setting up the Task Definition below.
 
-A [Default VPC] should do the trick, chances are you've already got one.
+A [Default VPC] should do the trick, chances are you've already got one.  We'll be modifying the default security group within the EFS setup below.
 
 ## Elastic File System
 EFS is where the world data and server properties are stored, and persists between runs of the minecraft server.  By using an "Access Point" the mounted folder is created automatically, so no mounting of the EFS to an external resource is required to get up and running.  To make changes to the files like `server.properties` later however, a user can either mount the EFS file system to a Linux host in their account if they're comfortable with that, or I detail another method below using AWS DataSync and S3 that anyone can use without Linux experience.
@@ -76,6 +77,11 @@ Select your newly created filesystem, and tap the `Access Points` tab.  Create a
   - POSIX Permissions : `0755`
 
 Click `Create access point`.  Record the File System ID and the Access Point ID for our checklist.  They are in the format `fs-xxxxxxxx` and `fsap-xxxxxxxxxxxxxxxxx` respectively.
+
+### Allow access to EFS from within the VPC
+Our EFS by default is assigned the default security group, which allows connections from all members of that default security group.  Our ECS Service will not be using the default security group however, because we are opening Minecraft to the public internet.  So, we need to add EFS access to the default security group (more advanced users may want to create a new dedicated security group with this rule and assign it to the mount points within the EFS console, however that will not be described here).
+
+Open the VPC console, find `Security Groups` on the left hand side.  Select the default security group in the list, then click on `Edit inbound rules`.  Add a new rule, select `NFS` in the `Type` list and put your VPC IPv4 CIDR from your checklist as the source.  After clicking `Save rules` double check that it added successfully by viewing it in the `Security Groups` detail pane.
 
 ## Lambda
 A lambda function must exist that turns on your minecraft service.  We do this with a simple python function that change the "Tasks Desired" count from zero to one when it is invoked.  We haven't created the ECS service yet, but that's okay, because we decided on the cluster name and service name before we started.
