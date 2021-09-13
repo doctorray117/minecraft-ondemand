@@ -5,7 +5,7 @@
     "cdk": "bin/cdk.js"
   },
   "scripts": {
-    "prebuild": "npm install",
+    "prebuild": "npm ci",
     "build": "cdk bootstrap",
     "deploy": "cdk deploy --all",
     "destroy": "cdk destroy --all"
