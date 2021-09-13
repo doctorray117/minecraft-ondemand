@@ -2,16 +2,23 @@
 // TODO: Add additional params for [Minecraft Docker Server Docs](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
 export const config = {
   /**
-   * Domain to create a hosted zone and be used as your minecraft server address.
-   * // TODO: Set as optional and run checks if hosted zone name already exists
+   * Domain name of existing Route53 Hosted Zone
    */
-  DOMAIN_NAME: 'minecraft.ryansonshine.com',
+  DOMAIN_NAME: 'example.com',
+  /**
+   * Name of the subdomain part to be used for creating a delegated hosted zone
+   * (minecraft.example.com) and an NS record on your existing (example.com)
+   * hosted zone. This subdomain should not already be in use.
+   *
+   * @default "minecraft"
+   */
+  SUBDOMAIN_PART: 'minecraft',
   /**
    * The AWS region to deploy your minecraft server in.
    *
-   * @default "us-west-2"
+   * @default "us-east-1"
    */
-  SERVER_REGION: 'us-west-2',
+  SERVER_REGION: 'us-east-1',
   /**
    * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
    *

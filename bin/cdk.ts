@@ -15,6 +15,8 @@ const domainStack = new DomainStack(app, 'minecraft-domain-stack', {
      * it _must_ reside in the N. Virginia (us-east-1) region.
      */
     region: constants.DOMAIN_STACK_REGION,
+    // Account must be specified to allow for hosted zone lookup
+    account: process.env.CDK_DEFAULT_ACCOUNT,
   }
 });
 

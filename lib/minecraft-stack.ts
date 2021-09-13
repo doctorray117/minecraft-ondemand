@@ -190,7 +190,7 @@ export class MinecraftStack extends Stack {
           CLUSTER: constants.CLUSTER_NAME,
           SERVICE: constants.SERVICE_NAME,
           DNSZONE: hostedZoneId,
-          SERVERNAME: config.DOMAIN_NAME,
+          SERVERNAME: `${config.SUBDOMAIN_PART}.${config.DOMAIN_NAME}`,
           // TODO: Optional fields
           // SNSTOPIC: '',
           // TWILIOFROM: '',

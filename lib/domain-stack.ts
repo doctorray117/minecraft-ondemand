@@ -22,10 +22,10 @@ export class DomainStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const domainName = config.DOMAIN_NAME;
+    const subdomain = `${config.SUBDOMAIN_PART}.${config.DOMAIN_NAME}`;
 
     const queryLogGroup = new logs.LogGroup(this, 'LogGroup', {
-      logGroupName: `/aws/route53/${domainName}`,
+      logGroupName: `/aws/route53/${subdomain}`,
       retention: 3,
       removalPolicy: RemovalPolicy.DESTROY,
     });
@@ -57,13 +57,25 @@ export class DomainStack extends Stack {
       { policyName, statements: dnsWriteToCw }
     );
 
-    const zone = new route53.HostedZone(this, 'HostedZone', {
-      zoneName: domainName,
+    const rootHostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
+      domainName: config.DOMAIN_NAME,
+    });
+
+    const subdomainHostedZone = new route53.HostedZone(this, 'SubdomainHostedZone', {
+      zoneName: subdomain,
       queryLogsLogGroupArn: queryLogGroup.logGroupArn,
     });
 
     // Resource policy for CloudWatch Logs is needed before the zone can be created
-    zone.node.addDependency(cloudwatchLogResourcePolicy);
+    subdomainHostedZone.node.addDependency(cloudwatchLogResourcePolicy);
+    // Ensure we hvae an existing hosted zone before creating our delegated zone
+    subdomainHostedZone.node.addDependency(rootHostedZone);
+
+    const nsRecord = new route53.NsRecord(this, 'NSRecord', {
+      zone: rootHostedZone,
+      values: subdomainHostedZone.hostedZoneNameServers as string[],
+      recordName: subdomain
+    });
 
     const aRecord = new route53.ARecord(this, 'ARecord', {
       target: {
@@ -79,12 +91,12 @@ export class DomainStack extends Stack {
        * the IP updates.
        */
       ttl: Duration.seconds(30),
-      recordName: domainName,
-      zone,
+      recordName: subdomain,
+      zone: subdomainHostedZone,
     });
 
     // Set dependency on A record to ensure it is removed first on deletion
-    aRecord.node.addDependency(zone);
+    aRecord.node.addDependency(subdomainHostedZone);
 
     const launcherLambda = new lambda.Function(this, 'LauncherLambda', {
       code: lambda.Code.fromAsset(path.resolve(__dirname, '../lambda')),
@@ -113,22 +125,22 @@ export class DomainStack extends Stack {
 
     /**
      * Create our log subscription filter to catch any log events containing
-     * our domain name and send them to our launcher lambda.
+     * our subdomain name and send them to our launcher lambda.
      */
     queryLogGroup.addSubscriptionFilter('SubscriptionFilter', {
       destination: new logDestinations.LambdaDestination(launcherLambda),
-      filterPattern: logs.FilterPattern.anyTerm(config.DOMAIN_NAME),
+      filterPattern: logs.FilterPattern.anyTerm(subdomain),
     });
 
     /**
-     * Add the hosted zone ID to SSM since we cannot consume a cross-stack
+     * Add the subdomain hosted zone ID to SSM since we cannot consume a cross-stack
      * references across regions.
      */
     new ssm.StringParameter(this, 'HostedZoneParam', {
       allowedPattern: '.*',
       description: 'Hosted zone ID for minecraft server',
       parameterName: constants.HOSTED_ZONE_SSM_PARAMETER,
-      stringValue: zone.hostedZoneId,
+      stringValue: subdomainHostedZone.hostedZoneId,
     });
 
     /**

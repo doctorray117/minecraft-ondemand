@@ -3,13 +3,13 @@
 ## Functionality
 
 - [x] Add CloudWatch trigger for the lambda
+- [x] Integrate delegate zone setup
 - [ ] SNS/Twilio integration
-- [ ] Integrate delegate zone setup
 
 ## Bugs
 
 - [x] Sort out task permissions errors
-- [ ] Investigate 3x event creation on lambda
+- [x] Investigate 3x event creation on lambda
 - [ ] Update retention settings for resources not removed by `cdk destroy`
 
 ## Customization
