@@ -7,7 +7,8 @@
   "scripts": {
     "prebuild": "npm install",
     "build": "cdk synth",
-    "deploy": "cdk deploy --all"
+    "deploy": "cdk deploy --all",
+    "destroy": "cdk destroy --all"
   },
   "devDependencies": {
     "@types/jest": "^26.0.10",
