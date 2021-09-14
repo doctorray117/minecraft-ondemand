@@ -24,7 +24,11 @@ git clone https://github.com/doctorray117/minecraft-ondemand.git
 
 ### 2. Set the required configuration values
 
-Copy `.env.sample` at the root of this repo and save it as `.env`.
+Copy `.env.sample` at the root of this repo and save it as `.env`:
+
+```bash
+cp .env.sample .env
+```
 
 The only **required** configuration value is `DOMAIN_NAME`. This value should be
 the domain name of your existing Route53 hosted zone. An NS record will be added
