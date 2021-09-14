@@ -4,12 +4,15 @@ import * as cdk from 'aws-cdk-lib';
 import { MinecraftStack } from '../lib/minecraft-stack';
 import { DomainStack } from '../lib/domain-stack';
 import { constants } from '../lib/constants';
-import { config } from '../lib/config';
+import { resolveConfig } from '../lib/config';
 
 const app = new cdk.App();
 
-if (!config.DOMAIN_NAME) {
-  throw new Error('Missing DOMAIN_NAME config value in config.ts');
+const config = resolveConfig();
+
+if (!config.domainName) {
+  throw new Error('Missing required `DOMAIN_NAME` in .env file, please rename\
+    `.env.sample` to `.env` and add your domain name.');
 }
 
 const domainStack = new DomainStack(app, 'minecraft-domain-stack', {
@@ -22,12 +25,14 @@ const domainStack = new DomainStack(app, 'minecraft-domain-stack', {
     /* Account must be specified to allow for hosted zone lookup */
     account: process.env.CDK_DEFAULT_ACCOUNT,
   },
+  config,
 });
 
 const minecraftStack = new MinecraftStack(app, 'minecraft-server-stack', {
   env: {
-    region: config.SERVER_REGION,
+    region: config.serverRegion,
   },
+  config,
 });
 
 minecraftStack.addDependency(domainStack);

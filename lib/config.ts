@@ -1,10 +1,15 @@
-// TODO: Add .env handling and default values
-// TODO: Add additional params for [Minecraft Docker Server Docs](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
-export const config = {
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+import { StackConfig } from './types';
+import { stringAsBoolean } from './util';
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+export const resolveConfig = (): StackConfig => ({
   /**
    * Domain name of existing Route53 Hosted Zone
    */
-  DOMAIN_NAME: process.env.DOMAIN_NAME || '',
+  domainName: process.env.DOMAIN_NAME || '',
   /**
    * Name of the subdomain part to be used for creating a delegated hosted zone
    * (minecraft.example.com) and an NS record on your existing (example.com)
@@ -12,25 +17,25 @@ export const config = {
    *
    * @default "minecraft"
    */
-  SUBDOMAIN_PART: process.env.SUBDOMAIN_PART || 'minecraft',
+  subdomainPart: process.env.SUBDOMAIN_PART || 'minecraft',
   /**
    * The AWS region to deploy your minecraft server in.
    *
    * @default "us-east-1"
    */
-  SERVER_REGION: process.env.SERVER_REGION || 'us-east-1',
-  /**
-   * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
-   *
-   * @default "10"
-   */
-  STARTUP_MINUTES: '10',
+  serverRegion: process.env.SERVER_REGION || 'us-east-1',
   /**
    * Number of minutes to wait after the last client disconnects before terminating (optional, default 20)
    *
    * @default "20"
    */
-  SHUTDOWN_MINUTES: '20',
+  shutdownMinutes: process.env.SHUTDOWN_MINUTES || '20',
+  /**
+   * Number of minutes to wait for a connection after starting before terminating (optional, default 10)
+   *
+   * @default "10"
+   */
+  startupMinutes: process.env.STARTUP_MINUTES || '10',
   /**
    * Sets the preference for Fargate Spot.
    *
@@ -44,23 +49,7 @@ export const config = {
    *
    * @default "false"
    */
-  USE_FARGATE_SPOT: 'false',
-  /**
-   * The amount (in MiB) of memory used by the task running the Minecraft server.
-   *
-   * 512 (0.5 GB), 1024 (1 GB), 2048 (2 GB) - Available cpu values: 256 (.25 vCPU)
-   *
-   * 1024 (1 GB), 2048 (2 GB), 3072 (3 GB), 4096 (4 GB) - Available cpu values: 512 (.5 vCPU)
-   *
-   * 2048 (2 GB), 3072 (3 GB), 4096 (4 GB), 5120 (5 GB), 6144 (6 GB), 7168 (7 GB), 8192 (8 GB) - Available cpu values: 1024 (1 vCPU)
-   *
-   * Between 4096 (4 GB) and 16384 (16 GB) in increments of 1024 (1 GB) - Available cpu values: 2048 (2 vCPU)
-   *
-   * Between 8192 (8 GB) and 30720 (30 GB) in increments of 1024 (1 GB) - Available cpu values: 4096 (4 vCPU)
-   *
-   * @default 2048 2 GB
-   */
-  TASK_MEMORY: '2048',
+  useFargateSpot: stringAsBoolean(process.env.USE_FARGATE_SPOT) || false,
   /**
    * The number of cpu units used by the task running the Minecraft server.
    *
@@ -78,5 +67,21 @@ export const config = {
    *
    * @default 1024 1 vCPU
    */
-  TASK_CPU: '1024',
-};
+  taskCpu: +(process.env.TASK_CPU || 1024),
+  /**
+   * The amount (in MiB) of memory used by the task running the Minecraft server.
+   *
+   * 512 (0.5 GB), 1024 (1 GB), 2048 (2 GB) - Available cpu values: 256 (.25 vCPU)
+   *
+   * 1024 (1 GB), 2048 (2 GB), 3072 (3 GB), 4096 (4 GB) - Available cpu values: 512 (.5 vCPU)
+   *
+   * 2048 (2 GB), 3072 (3 GB), 4096 (4 GB), 5120 (5 GB), 6144 (6 GB), 7168 (7 GB), 8192 (8 GB) - Available cpu values: 1024 (1 vCPU)
+   *
+   * Between 4096 (4 GB) and 16384 (16 GB) in increments of 1024 (1 GB) - Available cpu values: 2048 (2 vCPU)
+   *
+   * Between 8192 (8 GB) and 30720 (30 GB) in increments of 1024 (1 GB) - Available cpu values: 4096 (4 vCPU)
+   *
+   * @default 2048 2 GB
+   */
+  taskMemory: +(process.env.TASK_MEMORY || 2048),
+});

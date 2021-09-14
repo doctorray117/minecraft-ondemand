@@ -24,34 +24,14 @@ git clone https://github.com/doctorray117/minecraft-ondemand.git
 
 ### 2. Set the required configuration values
 
-TODO: Description of where the configuration lives and how to change values
+Copy `.env.sample` at the root of this repo and save it as `.env`.
 
-#### Domain Name
+The only **required** configuration value is `DOMAIN_NAME`. This value should be
+the domain name of your existing Route53 hosted zone. An NS record will be added
+to this hosted zone after CDK creates a hosted zone to handle the
+subdomain (defaults to `minecraft`).
 
-**Config:** `DOMAIN_NAME`
-
-**Description:** The domain name of your existing Route53 hosted zone. A NS record
-will be added to this hosted zone after CDK creates a hosted zone to handle the
-subdomain (deafults to `minecraft`).
-
-For example, if your existing Route53 Hosted Zone domain name is `example.com`,
-the domain for accessing your Minecraft server will be `minecraft.example.com`.
-
-#### AWS Region
-
-**Config:** `SERVER_REGION`
-
-**Description:** The AWS Region to deploy the Minecraft server in, ideally this
-would be the region closest to you or the players on your server. If no value is
-provided, this will default to the region specified for your AWS CLI profile.
-
-#### Additional configuration (optional)
-
-Optionally, you can change the following values for additional customization:
-
-| Option | Description | Default |
-| ------ | ----------- | ------- |
-|        |             |         |
+See the section on [Configuration](#configuration) for more configuration options.
 
 ### 3. Build and Deploy
 
@@ -60,6 +40,19 @@ Build and deploy the solution by running:
 ```bash
 npm run build && npm run deploy
 ```
+
+## Configuration
+
+| Config           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Default     |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------- |
+| DOMAIN_NAME      | Domain name of existing Route53 Hosted Zone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |             |
+| SUBDOMAIN_PART   | Name of the subdomain part to be used for creating a delegated hosted zone (minecraft.example.com) and an NS record on your existing (example.com) hosted zone. This subdomain should not already be in use.                                                                                                                                                                                                                                                                                                                               | `minecraft` |
+| SERVER_REGION    | The AWS region to deploy your minecraft server in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | `us-east-1` |
+| STARTUP_MINUTES  | Number of minutes to wait for a connection after starting before terminating                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `10`        |
+| SHUTDOWN_MINUTES | Number of minutes to wait after the last client disconnects before terminating                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `20`        |
+| USE_FARGATE_SPOT | Sets the preference for Fargate Spot. <br />If you leave it 'false', your tasks will launch under the FARGATE strategy which currently will run about 5 cents per hour. You can switch it to true to enable FARGATE_SPOT, and pay 1.5 cents per hour. While this is cheaper, technically AWS can terminate your instance at any time if they need the capacity. The watchdog is designed to intercept this termination command and shut down safely, it's fine to use Spot to save a few pennies, at the extremely low risk of game interruption. | `false`     |
+| TASK_MEMORY      | The amount (in MiB) of memory used by the task running the Minecraft server.                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `2048`      |
+| TASK_CPU         | The number of cpu units used by the task running the Minecraft server.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `1024`      |
 
 ## Cleanup
 

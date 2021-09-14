@@ -15,15 +15,21 @@ import {
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { constants } from './constants';
-import { config } from './config';
 import { CWGlobalResourcePolicy } from './cw-global-resource-policy';
 import { RetentionDays } from 'aws-cdk-lib/lib/aws-logs';
+import { StackConfig } from './types';
+
+interface DomainStackProps extends StackProps {
+  config: Readonly<StackConfig>;
+}
 
 export class DomainStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: DomainStackProps) {
     super(scope, id, props);
 
-    const subdomain = `${config.SUBDOMAIN_PART}.${config.DOMAIN_NAME}`;
+    const { config } = props;
+
+    const subdomain = `${config.subdomainPart}.${config.domainName}`;
 
     const queryLogGroup = new logs.LogGroup(this, 'LogGroup', {
       logGroupName: `/aws/route53/${subdomain}`,
@@ -59,7 +65,7 @@ export class DomainStack extends Stack {
     );
 
     const rootHostedZone = route53.HostedZone.fromLookup(this, 'HostedZone', {
-      domainName: config.DOMAIN_NAME,
+      domainName: config.domainName,
     });
 
     const subdomainHostedZone = new route53.HostedZone(
@@ -108,7 +114,7 @@ export class DomainStack extends Stack {
       handler: 'lambda_function.lambda_handler',
       runtime: lambda.Runtime.PYTHON_3_8,
       environment: {
-        REGION: config.SERVER_REGION,
+        REGION: config.serverRegion,
         CLUSTER: constants.CLUSTER_NAME,
         SERVICE: constants.SERVICE_NAME,
       },

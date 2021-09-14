@@ -14,12 +14,18 @@ import {
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { constants } from './constants';
-import { config } from './config';
 import { SSMParameterReader } from './ssm-parameter-reader';
+import { StackConfig } from './types';
+
+interface MinecraftStackProps extends StackProps {
+  config: Readonly<StackConfig>;
+}
 
 export class MinecraftStack extends Stack {
-  constructor(scope: Construct, id: string, props?: StackProps) {
+  constructor(scope: Construct, id: string, props: MinecraftStackProps) {
     super(scope, id, props);
+
+    const { config } = props;
 
     const vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: 3,
@@ -83,8 +89,8 @@ export class MinecraftStack extends Stack {
       'TaskDefinition',
       {
         taskRole: ecsTaskRole,
-        memoryLimitMiB: +config.TASK_MEMORY,
-        cpu: +config.TASK_CPU,
+        memoryLimitMiB: config.taskMemory,
+        cpu: config.taskCpu,
         volumes: [
           {
             name: constants.ECS_VOLUME_NAME,
@@ -149,8 +155,9 @@ export class MinecraftStack extends Stack {
         cluster,
         capacityProviderStrategies: [
           {
-            capacityProvider:
-              config.USE_FARGATE_SPOT === 'true' ? 'FARGATE_SPOT' : 'FARGATE',
+            capacityProvider: config.useFargateSpot
+              ? 'FARGATE_SPOT'
+              : 'FARGATE',
             weight: 1,
             base: 1,
           },
@@ -192,15 +199,15 @@ export class MinecraftStack extends Stack {
           CLUSTER: constants.CLUSTER_NAME,
           SERVICE: constants.SERVICE_NAME,
           DNSZONE: hostedZoneId,
-          SERVERNAME: `${config.SUBDOMAIN_PART}.${config.DOMAIN_NAME}`,
+          SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
           // TODO: Optional fields
           // SNSTOPIC: '',
           // TWILIOFROM: '',
           // TWILIOTO: '',
           // TWILIOAID: '',
           // TWILIOAUTH: '',
-          STARTUPMIN: config.STARTUP_MINUTES,
-          SHUTDOWNMIN: config.SHUTDOWN_MINUTES,
+          STARTUPMIN: config.startupMinutes,
+          SHUTDOWNMIN: config.shutdownMinutes,
         },
         logging: new ecs.AwsLogDriver({
           logRetention: logs.RetentionDays.THREE_DAYS,
