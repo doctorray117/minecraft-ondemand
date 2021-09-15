@@ -23,8 +23,8 @@ The process works as follows:
 ## Requirements
 - AWS Account
 - Domain name with public [DNS served from Route 53].  Does not need to be registered through Route 53.  
-- Minecraft Java edition client (though it could probably be tweaked to work with bedrock edition)
-- Use of the excellent [Minecraft Docker] server image (used within task definition, no direct download required)
+- Minecraft Java edition OR Bedrock edition client
+- Use of the excellent [Minecraft Java Docker] or [Minecraft Bedrock Docker] server image (used within task definition, no direct download required)
 
 ## Cost Breakdown
 - Link to [AWS Estimate] assuming 20 hours a month usage.
@@ -288,15 +288,19 @@ Skip `Container Definitions` temporarily and scroll further down to Volumes.  Cl
 
 Scroll back up and click `Add container`.  Use defaults except for these specifics:
 - Container name: `minecraft-server` 
-- Image: `itzg/minecraft-server`
-- Port Mappings: `25565 TCP`
+- Image:
+  - For Java edition: `itzg/minecraft-server`
+  - For Bedrock edition: `itzg/minecraft-bedrock-server`
+- Port Mappings:
+  - For Java edition: `25565 TCP`
+  - For Bedrock edition: `19132 UDP`
 
 Under `Advanced container configuration` make these changes:
 - Environment
   - UNCHECK `Essential` (the watchdog container handles shutdowns)
   - Environment Variables.  One gotcha,  you have to select "Value" from the drop down list when defining these.
     - `EULA` : `TRUE`
-    - Any additional stuff you want from [Minecraft Docker Server Docs]
+    - Any additional stuff you want from [Minecraft Java Docker Server Docs] or [Minecraft Bedrock Docker Server Docs]
 - Storage and Logging
   - Mount Points
     - Source volume : `data`
@@ -357,9 +361,14 @@ Click `Next step`
   - Security Group: Click `Edit`
     - Create new security gruop
     - Security group name: Default is fine or call it `minecraft-server`
-    - Inbound rules for security group
+    - Inbound rules for security group (Java edition)
       - Change `HTTP` to `Custom TCP`
       - Port range: `25565`
+      - Source: `Anywhere` is fine.  Customizing this to specific source IPs is beyond the scope of this document.
+      - Click `Save`
+    - Inbound rules for security group (Bedrock edition)
+      - Change `HTTP` to `Custom UDP`
+      - Port range: `19132`
       - Source: `Anywhere` is fine.  Customizing this to specific source IPs is beyond the scope of this document.
       - Click `Save`
     - Auto-assign public IP: `ENABLED` (default)
@@ -415,13 +424,17 @@ Click `Next`.  For `Destination location options` select `Create new location` w
 Click `Next`.  For `Task Name` consider something like `minecraft-efs-to-s3`.  For the rest of the options, use these:
 - Task execution configuration : Use all defaults
 - Data transfer configuration
-  - Data to scan : Entire source location
+  - Data to scan : Specific files and folders
   - Transfer mode : Transfer only data that has changed
   - Keep deleted files / Overwrite files : Keep enabled as default
-  - Excludes : add three excludes:
-    - `*.jar` (this prevents copying the minecraft server binary
-    - `/world` (we definitely don't want to overwrite your world...)
-    - `/logs` (we can go to cloudwatch to look at these anytime)
+  - Includes for Java edition: add three:
+    - `*.json` (this will include `banned-ips`, `banned-players`, `ops`, `usercache`, `whitelist`)
+    - `server.properties`
+    - `server-icon.png`
+  - Includes for Bedrock edition:
+    - `permissions.json`
+    - `whitelist.json`
+    - `server.properties`
 - Schedule : not scheduled, we'll run it on demand
 - Task logging
   - Log level : Do not send logs to CloudWatch
@@ -499,12 +512,13 @@ Open an issue, fork the repo, send me a pull request or a message.
 
   [Finding your AWS account ID]: <https://docs.aws.amazon.com/IAM/latest/UserGuide/console_account-alias.html#FindingYourAWSId>
   [Default VPC]: <https://docs.aws.amazon.com/vpc/latest/userguide/default-vpc.html>
-  [Minecraft Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
+  [Minecraft Java Docker]: <https://hub.docker.com/r/itzg/minecraft-server>
+  [Minecraft Bedrock Docker]: <https://hub.docker.com/r/itzg/minecraft-bedrock-server>
   [AWS Estimate]: <https://calculator.aws/#/estimate?id=61e8ef3440b68927eb0da116e18628e3081875b6>
-  [Minecraft Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
+  [Minecraft Java Docker Server Docs]: <https://github.com/itzg/docker-minecraft-server/blob/master/README.md>
+  [Minecraft Bedrock Docker Server Docs]: <https://github.com/itzg/docker-minecraft-bedrock-server/blob/master/README.md>
   [DNS served from Route 53]: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/dns-configuring.html>
   [Delegate Zone Setup]: <https://stackoverflow.com/questions/47527575/aws-policy-allow-update-specific-record-in-route53-hosted-zone>
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
-

@@ -78,31 +78,65 @@ cat << EOF >> minecraft-dns.json
 EOF
 aws route53 change-resource-record-sets --hosted-zone-id $DNSZONE --change-batch file://minecraft-dns.json
 
-echo "Waiting for Minecraft RCON to begin listening for connections"
-STARTED=0
-while [ $STARTED -lt 1 ]
+## detemine java or bedrock based on listening port
+echo "Determining Minecraft edition based on listening port..."
+echo "If we are stuck here, the minecraft container probably failed to start.  Waiting 10 minutes just in case..."
+COUNTER=0
+while true
 do
-  CONNECTIONS=$(netstat -atn | grep :25575 | grep LISTEN | wc -l)
-  STARTED=$(($STARTED + $CONNECTIONS))
-  if [ $STARTED -gt 0 ] ## minecraft actively listening, break out of loop
-  then
-    break
-  fi
+  netstat -atn | grep :25565 | grep LISTEN && EDITION="java" && break
+  netstat -aun | grep :19132 && EDITION="bedrock" && break
   sleep 1
+  COUNTER=$(($COUNTER + 1))
+  if [ $COUNTER -gt 600 ] ## server has not been detected as starting within 10 minutes
+  then
+    echo 10 minutes elapsed without a minecraft server listening, terminating.
+    zero_service
+  fi
 done
+echo "Detected $EDITION edition"
+
+if [ "$EDITION" == "java" ]
+then
+  echo "Waiting for Minecraft RCON to begin listening for connections..."
+  STARTED=0
+  while [ $STARTED -lt 1 ]
+  do
+    CONNECTIONS=$(netstat -atn | grep :25575 | grep LISTEN | wc -l)
+    STARTED=$(($STARTED + $CONNECTIONS))
+    if [ $STARTED -gt 0 ] ## minecraft actively listening, break out of loop
+    then
+      echo "RCON is listening, we are ready for clients."
+      break
+    fi
+    sleep 1
+  done
+fi
+
+if [ "$EDITION" == "bedrock" ]
+then
+  PINGA="\x01" ## uncommitted ping
+  PINGB="\x00\x00\x00\x00\x00\x00\x4e\x20" ## time since start in ms.  20 seconds sounds good
+  PINGC="\x00\xff\xff\x00\xfe\xfe\xfe\xfe\xfd\xfd\xfd\xfd\x12\x34\x56\x78" ## offline message data id
+  PINGD=$(for i in $(seq 1 8); do echo -en "\x5c\x78" ; tr -dc 'a-f0-9' < /dev/urandom | head -c2; done) ## random client guid
+  BEDROCKPING=$PINGA$PINGB$PINGC$PINGD
+  echo "Bedrock ping string is $BEDROCKPING"
+fi
 
 ## Send startup notification message
 send_notification startup
 
-echo "Checking every 60 seconds for active connections to Minecraft"
+echo "Checking every 1 minute for active connections to Minecraft, up to $STARTUPMIN minutes..."
 COUNTER=0
 CONNECTED=0
 while [ $CONNECTED -lt 1 ]
 do
-  CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  echo Waiting for connection, minute $COUNTER out of $STARTUPMIN...
+  [ "$EDITION" == "java" ] && CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  [ "$EDITION" == "bedrock" ] && CONNECTIONS=$((echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
+  [ -n "$CONNECTIONS" ] || CONNECTIONS=0
   CONNECTED=$(($CONNECTED + $CONNECTIONS))
   COUNTER=$(($COUNTER + 1))
-  echo Waiting for connection, minute $COUNTER out of $STARTUPMIN...
   if [ $CONNECTED -gt 0 ] ## at least one active connection detected, break out of loop
   then
     break
@@ -112,25 +146,26 @@ do
     echo $STARTUPMIN minutes exceeded without a connection, terminating.
     zero_service
   fi
-  echo Sleeping 1 minute...
   ## only doing short sleeps so that we can catch a SIGTERM if needed
-  for i in $(seq 1 60) ; do sleep 1; done
+  for i in $(seq 1 59) ; do sleep 1; done
 done
 
-echo "We believe a connection has been made, switching to shutdown watcher"
+echo "We believe a connection has been made, switching to shutdown watcher."
 COUNTER=0
 while [ $COUNTER -le $SHUTDOWNMIN ]
 do
-  CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  [ "$EDITION" == "java" ] && CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  [ "$EDITION" == "bedrock" ] && CONNECTIONS=$((echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
+  [ -n "$CONNECTIONS" ] || CONNECTIONS=0
   if [ $CONNECTIONS -lt 1 ]
   then
+    echo "No active connections detected, $COUNTER out of $SHUTDOWNMIN minutes..."
     COUNTER=$(($COUNTER + 1))
-    echo No connections detected, incrementing counter to $COUNTER.
   else
+    [ $COUNTER -gt 0 ] && echo "New connections active, zeroing counter."
     COUNTER=0
-    echo Connections detected, zeroing counter.
   fi
-  for i in $(seq 1 60) ; do sleep 1; done
+  for i in $(seq 1 59) ; do sleep 1; done
 done
 
 echo "$SHUTDOWNMIN minutes elapsed without a connection, terminating."
