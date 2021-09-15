@@ -6,8 +6,8 @@ import {
   aws_efs as efs,
   aws_iam as iam,
   aws_ecs as ecs,
-  aws_ssm as ssm,
   aws_logs as logs,
+  aws_sns as sns,
   RemovalPolicy,
   Arn,
   ArnFormat,
@@ -185,13 +185,30 @@ export class MinecraftStack extends Stack {
       }
     ).getParameterValue();
 
+    let snsTopicArn = '';
+    /* Create SNS Topic if SNS_EMAIL is provided */
+    if (config.snsEmailAddress) {
+      const snsTopic = new sns.Topic(this, 'ServerSnsTopic', {
+        displayName: 'Minecraft Server Notifications'
+      });
+
+      snsTopic.grantPublish(ecsTaskRole);
+
+      const emailSubscription = new sns.Subscription(this, 'EmailSubscription', {
+        protocol: sns.SubscriptionProtocol.EMAIL,
+        topic: snsTopic,
+        endpoint: config.snsEmailAddress,
+      });
+      snsTopicArn = snsTopic.topicArn;
+    }
+
     const watchdogContainer = new ecs.ContainerDefinition(
       this,
       'WatchDogContainer',
       {
         containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
         image: ecs.ContainerImage.fromAsset(
-          path.resolve(__dirname, '../minecraft-ecsfargate-watchdog/')
+          path.resolve(__dirname, '../minecraft-ecsfargate-watchdog/'),
         ),
         essential: true,
         taskDefinition: taskDefinition,
@@ -200,12 +217,11 @@ export class MinecraftStack extends Stack {
           SERVICE: constants.SERVICE_NAME,
           DNSZONE: hostedZoneId,
           SERVERNAME: `${config.subdomainPart}.${config.domainName}`,
-          // TODO: Optional fields
-          // SNSTOPIC: '',
-          // TWILIOFROM: '',
-          // TWILIOTO: '',
-          // TWILIOAID: '',
-          // TWILIOAUTH: '',
+          SNSTOPIC: snsTopicArn,
+          TWILIOFROM: config.twilio.phoneFrom,
+          TWILIOTO: config.twilio.phoneTo,
+          TWILIOAID: config.twilio.accountId,
+          TWILIOAUTH: config.twilio.authCode,
           STARTUPMIN: config.startupMinutes,
           SHUTDOWNMIN: config.shutdownMinutes,
         },

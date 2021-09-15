@@ -4,7 +4,7 @@
 
 - [x] Add CloudWatch trigger for the lambda
 - [x] Integrate delegate zone setup
-- [ ] SNS/Twilio integration
+- [x] SNS/Twilio integration
 
 ## Bugs
 

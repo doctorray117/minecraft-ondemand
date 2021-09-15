@@ -84,4 +84,35 @@ export const resolveConfig = (): StackConfig => ({
    * @default 2048 2 GB
    */
   taskMemory: +(process.env.TASK_MEMORY || 2048),
+  /**
+   * The email address you would like to receive notifications at.
+   *
+   * If this value is specified, an SNS topic is created and you will receive
+   * email notifications each time the minecraft server is launched and ready.
+   */
+  snsEmailAddress: process.env.SNS_EMAIL_ADDRESS || '',
+  twilio: {
+    /**
+     * Your twilio phone number.
+     *
+     * @example
+     * `+1XXXYYYZZZZ`
+     */
+    phoneFrom: process.env.TWILIO_PHONE_FROM || '',
+    /**
+     * Phone number to receive text notifications at.
+     *
+     * @example
+     * `+1XXXYYYZZZZ`
+     */
+    phoneTo: process.env.TWILIO_PHONE_TO || '',
+    /**
+     * Twilio account ID
+     */
+    accountId: process.env.TWILIO_ACCOUNT_ID || '',
+    /**
+     * Twilio auth code
+     */
+    authCode: process.env.TWILIO_AUTH_CODE || '',
+  }
 });

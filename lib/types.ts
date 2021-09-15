@@ -1,3 +1,10 @@
+interface TwilioConfig {
+  phoneFrom: string;
+  phoneTo: string;
+  accountId: string;
+  authCode: string;
+}
+
 export interface StackConfig {
   domainName: string;
   subdomainPart: string;
@@ -7,4 +14,6 @@ export interface StackConfig {
   useFargateSpot: boolean;
   taskMemory: number;
   taskCpu: number;
+  snsEmailAddress: string;
+  twilio: TwilioConfig;
 }
