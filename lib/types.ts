@@ -5,6 +5,8 @@ interface TwilioConfig {
   authCode: string;
 }
 
+export type MinecraftImageEnv  = Record<string, string>;
+
 export interface StackConfig {
   domainName: string;
   subdomainPart: string;
@@ -16,4 +18,5 @@ export interface StackConfig {
   taskCpu: number;
   snsEmailAddress: string;
   twilio: TwilioConfig;
+  minecraftImageEnv: MinecraftImageEnv;
 }

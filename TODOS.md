@@ -33,5 +33,5 @@
 - [ ] Add optional billing alert
 - [ ] EFS -> S3 DataSync
 - [ ] Integration testing
-- [ ] Add additional configs for [Minecraft Docker Server Docs](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
+- [x] Add additional configs for [Minecraft Docker Server Docs](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
 - [ ] Adjust [connection monitoring](https://github.com/doctorray117/minecraft-ondemand/issues/11) alternatives to incorporate bedrock support

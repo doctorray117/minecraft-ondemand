@@ -116,9 +116,7 @@ export class MinecraftStack extends Stack {
         portMappings: [
           { containerPort: 25565, hostPort: 25565, protocol: ecs.Protocol.TCP },
         ],
-        environment: {
-          EULA: 'TRUE',
-        },
+        environment: config.minecraftImageEnv,
         essential: false,
         taskDefinition,
         logging: new ecs.AwsLogDriver({

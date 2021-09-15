@@ -1,9 +1,23 @@
 import * as dotenv from 'dotenv';
 import * as path from 'path';
-import { StackConfig } from './types';
+import { MinecraftImageEnv, StackConfig } from './types';
 import { stringAsBoolean } from './util';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+const resolveMinecraftEnvVars = (json = ''): MinecraftImageEnv => {
+  const defaults = { EULA: 'TRUE '};
+  try {
+    return {
+      ...defaults,
+      ...JSON.parse(json),
+    };
+  } catch (e) {
+    console.error('Unable to resolve .env value for MINECRAFT_IMAGE_ENV_VARS_JSON.\
+      Defaults will be used')
+    return defaults;
+  }
+}
 
 export const resolveConfig = (): StackConfig => ({
   /**
@@ -84,6 +98,10 @@ export const resolveConfig = (): StackConfig => ({
    * @default 2048 2 GB
    */
   taskMemory: +(process.env.TASK_MEMORY || 2048),
+  /**
+   * Additional environment variables to be passed to the [Minecraft Docker Server](https://github.com/itzg/docker-minecraft-server/blob/master/README.md).
+   */
+  minecraftImageEnv: resolveMinecraftEnvVars(process.env.MINECRAFT_IMAGE_ENV_VARS_JSON),
   /**
    * The email address you would like to receive notifications at.
    *
