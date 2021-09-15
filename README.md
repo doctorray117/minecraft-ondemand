@@ -73,7 +73,7 @@ Select your newly created filesystem, and tap the `Access Points` tab.  Create a
   - Group ID : `1000`
 - Root directory creation permissions (this is required, otherwise our container won't be able to create the folder to store its data the first time)
   - Owner user ID : `1000`
-  - Owner group IP : `1000`
+  - Owner group ID : `1000`
   - POSIX Permissions : `0755`
 
 Click `Create access point`.  Record the File System ID and the Access Point ID for our checklist.  They are in the format `fs-xxxxxxxx` and `fsap-xxxxxxxxxxxxxxxxx` respectively.
