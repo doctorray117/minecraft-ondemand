@@ -9,8 +9,8 @@ import {
   aws_ssm as ssm,
   aws_logs as logs,
   RemovalPolicy,
-  Fn,
   Arn,
+  ArnFormat,
 } from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { constants } from './constants';
@@ -224,12 +224,16 @@ export class MinecraftStack extends Stack {
           actions: ['ecs:*'],
           resources: [
             minecraftServerService.serviceArn,
-            // arn:aws:ecs:<region>:<account_number>:task/minecraft/
-            Fn.join('/', [
-              Arn.format({ resource: 'task', service: 'ecs' }, this),
-              constants.CLUSTER_NAME,
-              '*',
-            ]),
+            /* arn:aws:ecs:<region>:<account_number>:task/minecraft/* */
+            Arn.format(
+              {
+                service: 'ecs',
+                resource: 'task',
+                resourceName: `${constants.CLUSTER_NAME}/*`,
+                arnFormat: ArnFormat.SLASH_RESOURCE_NAME,
+              },
+              this
+            ),
           ],
         }),
         new iam.PolicyStatement({

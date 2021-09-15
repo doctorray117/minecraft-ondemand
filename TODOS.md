@@ -20,7 +20,7 @@
 
 ## Housekeeping
 
-- [ ] Swap out subs with Arn.format
+- [x] Swap out subs with Arn.format
 - [ ] Add description fields on resources
 - [ ] Modularize components
 - [ ] Additional docstrings
