@@ -280,7 +280,7 @@ Create a new Task Definition of `FARGATE` launch type.  In the configuration wiz
 - Task Definition Name: `minecraft-server`
 - Task Role: `ecs.task.minecraft-server`
 - Network Mode: `awsvpc` (default)
-- Task Execution Role: `Create new role` (default if you've never created tasks before) or `ecsTaskExecutionRole` (default otherwise)
+- Task Execution Role: `Create new role` (default if you've never created tasks before) or `ecsTaskExecutionRole` (default otherwise).  Not to be confused with the `ecs.task.minecraft-server` role we used earlier.
 - Task Memory: `2GB` (good to start, increase later if needed)
 - Task CPU: `1 vCPU` (good to start, increase later if needed)
 
