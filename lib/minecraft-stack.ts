@@ -29,6 +29,7 @@ export class MinecraftStack extends Stack {
 
     const vpc = new ec2.Vpc(this, 'Vpc', {
       maxAzs: 3,
+      natGateways: 0,
     });
 
     const fileSystem = new efs.FileSystem(this, 'FileSystem', {
