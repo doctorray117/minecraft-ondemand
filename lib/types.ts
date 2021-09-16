@@ -19,4 +19,5 @@ export interface StackConfig {
   snsEmailAddress: string;
   twilio: TwilioConfig;
   minecraftImageEnv: MinecraftImageEnv;
+  debug: boolean;
 }

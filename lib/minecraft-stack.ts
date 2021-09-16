@@ -120,10 +120,10 @@ export class MinecraftStack extends Stack {
         environment: config.minecraftImageEnv,
         essential: false,
         taskDefinition,
-        logging: new ecs.AwsLogDriver({
+        logging: config.debug ? new ecs.AwsLogDriver({
           logRetention: logs.RetentionDays.THREE_DAYS,
           streamPrefix: constants.MC_SERVER_CONTAINER_NAME,
-        }), // TODO: Add logging as optional with debug command
+        }) : undefined,
       }
     );
 
@@ -224,10 +224,10 @@ export class MinecraftStack extends Stack {
           STARTUPMIN: config.startupMinutes,
           SHUTDOWNMIN: config.shutdownMinutes,
         },
-        logging: new ecs.AwsLogDriver({
+        logging: config.debug ? new ecs.AwsLogDriver({
           logRetention: logs.RetentionDays.THREE_DAYS,
           streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
-        }), // TODO: Add logging as optional with debug command
+        }) : undefined,
       }
     );
 

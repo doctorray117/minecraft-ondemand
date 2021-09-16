@@ -132,5 +132,12 @@ export const resolveConfig = (): StackConfig => ({
      * Twilio auth code
      */
     authCode: process.env.TWILIO_AUTH_CODE || '',
-  }
+  },
+  /**
+   * Setting to true enables debug mode.
+   *
+   * This will create additional logging resources on:
+   *
+   */
+  debug: stringAsBoolean(process.env.DEBUG) || false,
 });
