@@ -20,5 +20,10 @@ new MinecraftStack(app, 'MinecraftStack', {
 
     /* For more information, see https://docs.aws.amazon.com/cdk/latest/guide/environments.html */
 
-    vpcId: "INSERT"
+    vpcId: "INSERT",
+    dnsZone: "INSERT",
+    notificationEmail: "INSERT",
+    serverName: "Minecraft Server",
+    shutdownMin: 20,
+    startupMin: 10
 });

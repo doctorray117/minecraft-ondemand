@@ -2,11 +2,18 @@ import * as cdk from '@aws-cdk/core';
 import * as ec2 from '@aws-cdk/aws-ec2';
 import * as efs from '@aws-cdk/aws-efs';
 import * as ecs from '@aws-cdk/aws-ecs';
+import * as sns from '@aws-cdk/aws-sns';
+import * as iam from '@aws-cdk/aws-iam';
 import { NetworkLoadBalancedFargateService } from '@aws-cdk/aws-ecs-patterns';
 
 export interface MinecraftStackProps extends cdk.StackProps
 {
     vpcId: string;
+    dnsZone: string;
+    serverName: string;
+    startupMin: number;
+    shutdownMin: number;
+    notificationEmail: string;
 }
 
 interface FileSystemDetails
@@ -25,7 +32,9 @@ export class MinecraftStack extends cdk.Stack
 
         const fileSystemDetails = this.createFileSystem(vpc);
 
-        this.createEcs(vpc, fileSystemDetails);
+        const snsTopicArn = this.createSnsTopic(props);
+
+        this.createEcs(props, vpc, fileSystemDetails, snsTopicArn);
     }
 
     private createFileSystem(vpc: ec2.IVpc): FileSystemDetails
@@ -53,7 +62,23 @@ export class MinecraftStack extends cdk.Stack
         };
     }
 
-    private createEcs(vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails)
+    private createSnsTopic(props: MinecraftStackProps): string
+    {
+        const topic = new sns.Topic(this, "MinecraftTopic", {
+            topicName: "minecraft-notifications",
+            displayName: "Minecraft Notifications"
+        });
+
+        new sns.Subscription(this, "MinecraftEmailSubscription", {
+            topic: topic,
+            protocol: sns.SubscriptionProtocol.EMAIL,
+            endpoint: props.notificationEmail,
+        });
+
+        return topic.topicArn;
+    }
+
+    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails, snsTopicArn: string)
     {
         const serviceName = "minecraft-server";
 
@@ -67,15 +92,15 @@ export class MinecraftStack extends cdk.Stack
                 environment: {
                     "CLUSTER": "minecraft",
                     "SERVICE": serviceName,
-                    "DNSZONE": "TODO",
-                    "SERVERNAME": "TODO",
-                    "SNSTOPIC": "TODO",
-                    "TWILIOFROM": "TODO",
-                    "TWILIOTO": "TODO",
-                    "TWILIOAID": "TODO",
-                    "TWILIOAUTH": "TODO",
-                    "STARTUPMIN": "10",
-                    "SHUTDOWNMIN": "20"
+                    "DNSZONE": props.dnsZone,
+                    "SERVERNAME": props.serverName,
+                    "SNSTOPIC": snsTopicArn,
+                    // "TWILIOFROM": "TODO",
+                    // "TWILIOTO": "TODO",
+                    // "TWILIOAID": "TODO",
+                    // "TWILIOAUTH": "TODO",
+                    "STARTUPMIN": props.startupMin.toString(),
+                    "SHUTDOWNMIN": props.shutdownMin.toString()
                 }
             },
             memoryLimitMiB: 2048,
@@ -105,6 +130,12 @@ export class MinecraftStack extends cdk.Stack
                 "EULA": "TRUE"
             },
         });
+
+        // Allow the ECS task to publish to the SNS topic
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: ["sns:Publish"],
+            resources: [snsTopicArn]
+        }));
 
         serverContainer.addMountPoints({
             sourceVolume: dataVolumeName,
