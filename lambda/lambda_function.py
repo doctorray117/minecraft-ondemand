@@ -1,8 +1,9 @@
 import boto3
+import os
 
-REGION = 'us-west-2'
-CLUSTER = 'minecraft'
-SERVICE = 'minecraft-server'
+REGION = os.environ["REGION_NAME"]
+CLUSTER = os.environ["CLUSTER_NAME"]
+SERVICE = os.environ["SERVICE_NAME"]
 
 
 def lambda_handler(event, context):

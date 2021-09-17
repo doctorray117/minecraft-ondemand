@@ -446,6 +446,16 @@
     "@aws-cdk/cx-api" "1.123.0"
     constructs "^3.3.69"
 
+"@aws-cdk/aws-lambda-python@^1.123.0":
+  version "1.123.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda-python/-/aws-lambda-python-1.123.0.tgz#7724ba46ab8246562edcfccaee51d0cb4743dd84"
+  integrity sha512-yaimpwOC6TR7PNHCE/i13BH53vsoPnHo5RP/x63SjcOnXbItjs34yWTB6rl+lg1mEe8p+x3tySfparty8eQ3IA==
+  dependencies:
+    "@aws-cdk/aws-ec2" "1.123.0"
+    "@aws-cdk/aws-lambda" "1.123.0"
+    "@aws-cdk/core" "1.123.0"
+    constructs "^3.3.69"
+
 "@aws-cdk/aws-lambda@1.123.0":
   version "1.123.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-lambda/-/aws-lambda-1.123.0.tgz#0bddff2cbd7e780370cdf3163b052400d2faff60"

@@ -5,15 +5,18 @@ import * as ecs from '@aws-cdk/aws-ecs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as iam from '@aws-cdk/aws-iam';
 import { NetworkLoadBalancedFargateService } from '@aws-cdk/aws-ecs-patterns';
+import { Cluster } from '@aws-cdk/aws-ecs';
 
 export interface MinecraftStackProps extends cdk.StackProps
 {
-    vpcId: string;
-    dnsZone: string;
-    serverName: string;
-    startupMin: number;
-    shutdownMin: number;
-    notificationEmail: string;
+    readonly clusterName: string;
+    readonly serviceName: string;
+    readonly vpcId: string;
+    readonly dnsZone: string;
+    readonly serverName: string;
+    readonly startupMin: number;
+    readonly shutdownMin: number;
+    readonly notificationEmail: string;
 }
 
 interface FileSystemDetails
@@ -80,19 +83,23 @@ export class MinecraftStack extends cdk.Stack
 
     private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails, snsTopicArn: string)
     {
-        const serviceName = "minecraft-server";
-
-        var service = new NetworkLoadBalancedFargateService(this, "MinecraftService", {
-            serviceName: serviceName,
+        const cluster = new Cluster(this, "MinecraftCluster", {
+            clusterName: props.clusterName,
             vpc: vpc,
+            containerInsights: true
+        });
+
+        const service = new NetworkLoadBalancedFargateService(this, "MinecraftService", {
+            serviceName: props.serviceName,
+            cluster: cluster,
             platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
             assignPublicIp: true,
             taskImageOptions: {
                 containerName: "minecraft-ecsfargate-watchdog",
                 image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
                 environment: {
-                    "CLUSTER": "minecraft",
-                    "SERVICE": serviceName,
+                    "CLUSTER": props.clusterName,
+                    "SERVICE": props.serviceName,
                     "DNSZONE": props.dnsZone,
                     "SERVERNAME": props.serverName,
                     "SNSTOPIC": snsTopicArn,
@@ -173,5 +180,19 @@ export class MinecraftStack extends cdk.Stack
         //         weight: 1,
         //     },
         // ]
+
+        // Export service ARN for cross-stack reference
+        new cdk.CfnOutput(this, 'MinecraftServiceArnOutput', {
+            value: service.service.serviceArn,
+            description: 'The ARN of the Minecraft ECS service.',
+            exportName: 'MinecraftServiceArn',
+        });
+
+        // Export task definition ARN for cross-stack reference
+        new cdk.CfnOutput(this, 'MinecraftTaskDefinitionArnOutput', {
+            value: service.taskDefinition.taskDefinitionArn,
+            description: 'The ARN of the Minecraft ECS task definition.',
+            exportName: 'MinecraftTaskDefinitionArn',
+        });
     }
 }

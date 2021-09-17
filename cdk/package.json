@@ -22,6 +22,7 @@
         "@aws-cdk/aws-ecs-patterns": "^1.122.0",
         "@aws-cdk/aws-efs": "^1.122.0",
         "@aws-cdk/aws-iam": "^1.123.0",
+        "@aws-cdk/aws-lambda-python": "^1.123.0",
         "@aws-cdk/aws-sns": "^1.123.0",
         "@aws-cdk/core": "1.123.0",
         "source-map-support": "^0.5.16"
