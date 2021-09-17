@@ -86,6 +86,7 @@ export class MinecraftStack extends cdk.Stack
             serviceName: serviceName,
             vpc: vpc,
             platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
+            assignPublicIp: true,
             taskImageOptions: {
                 containerName: "minecraft-ecsfargate-watchdog",
                 image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
@@ -131,17 +132,32 @@ export class MinecraftStack extends cdk.Stack
             },
         });
 
+        serverContainer.addMountPoints({
+            sourceVolume: dataVolumeName,
+            readOnly: false,
+            containerPath: "/data",
+        });
+
         // Allow the ECS task to publish to the SNS topic
         service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: ["sns:Publish"],
             resources: [snsTopicArn]
         }));
 
-        serverContainer.addMountPoints({
-            sourceVolume: dataVolumeName,
-            readOnly: false,
-            containerPath: "/data",
-        });
+        // Allow the ECS service to control itself
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: ["ecs:*"],
+            resources: [
+                service.service.serviceArn,
+                service.taskDefinition.taskDefinitionArn
+            ]
+        }));
+
+        // Allow the ECS service to understand which network interface is attached to it in order to properly update the DNS records
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: ["ec2:DescribeNetworkInterfaces"],
+            resources: ["*"]
+        }));
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
         // const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
