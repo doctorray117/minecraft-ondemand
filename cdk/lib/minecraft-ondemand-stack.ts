@@ -94,6 +94,7 @@ export class MinecraftStack extends cdk.Stack
             cluster: cluster,
             platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
             assignPublicIp: true,
+            desiredCount: 0,
             taskImageOptions: {
                 containerName: "minecraft-ecsfargate-watchdog",
                 image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
