@@ -9,7 +9,7 @@ const app = new cdk.App();
 const account = "INSERT"
 const region = "INSERT"
 
-new MinecraftStack(app, 'MinecraftStack', {
+const minecraftStack = new MinecraftStack(app, 'MinecraftStack', {
     env: { account: account, region: region },
     clusterName: "minecraft",
     serviceName: "minecraft-server",
@@ -21,9 +21,11 @@ new MinecraftStack(app, 'MinecraftStack', {
     startupMin: 10
 });
 
-new MinecraftLauncherStack(app, 'MinecraftLauncherStack', {
+const minecraftLauncherStack = new MinecraftLauncherStack(app, 'MinecraftLauncherStack', {
     env: { account: account, region: "us-east-1" },
     clusterName: "minecraft",
     serviceName: "minecraft-server",
     regionName: region
 });
+
+minecraftLauncherStack.addDependency(minecraftStack, "The Minecraft launcher stack requires the ECS service ARNs to setup permissions to control the service.");

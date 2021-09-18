@@ -5,7 +5,6 @@ import * as ecs from '@aws-cdk/aws-ecs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as iam from '@aws-cdk/aws-iam';
 import { NetworkLoadBalancedFargateService } from '@aws-cdk/aws-ecs-patterns';
-import { Cluster } from '@aws-cdk/aws-ecs';
 
 export interface MinecraftStackProps extends cdk.StackProps
 {
@@ -83,7 +82,7 @@ export class MinecraftStack extends cdk.Stack
 
     private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails, snsTopicArn: string)
     {
-        const cluster = new Cluster(this, "MinecraftCluster", {
+        const cluster = new ecs.Cluster(this, "MinecraftCluster", {
             clusterName: props.clusterName,
             vpc: vpc,
             containerInsights: true
@@ -94,7 +93,7 @@ export class MinecraftStack extends cdk.Stack
             cluster: cluster,
             platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
             assignPublicIp: true,
-            desiredCount: 0,
+            // desiredCount: 0,
             taskImageOptions: {
                 containerName: "minecraft-ecsfargate-watchdog",
                 image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
@@ -118,14 +117,15 @@ export class MinecraftStack extends cdk.Stack
 
         const dataVolumeName = "MinecraftDataVolume";
 
+        // TODO - This will generate a warning in the generated CFN due to CDK issue https://github.com/aws/aws-cdk/issues/15025
         service.taskDefinition.addVolume({
             name: dataVolumeName,
             efsVolumeConfiguration: {
                 fileSystemId: fileSystemDetails.fileSystemId,
+                transitEncryption: "ENABLED",
                 authorizationConfig: {
                     accessPointId: fileSystemDetails.accessPointId
-                },
-                rootDirectory: "data"
+                }
             }
         });
 
@@ -143,8 +143,13 @@ export class MinecraftStack extends cdk.Stack
         serverContainer.addMountPoints({
             sourceVolume: dataVolumeName,
             readOnly: false,
-            containerPath: "/data",
+            containerPath: "/data"
         });
+
+        // TODO - The below policy statements are not getting applied to the task role until AFTER the service is created.
+        // The service creation does not complete until the service starts successfully (because CDK is mandating the desirec count > 0).
+        // Service fails to start because it does not have the required permissions to control ECS (specified below).
+        // Solution - Work out how to ensure desired count = 0 on service creation to stop the service form needing to start up successfully.
 
         // Allow the ECS task to publish to the SNS topic
         service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
@@ -157,7 +162,7 @@ export class MinecraftStack extends cdk.Stack
             actions: ["ecs:*"],
             resources: [
                 service.service.serviceArn,
-                service.taskDefinition.taskDefinitionArn
+                cdk.Arn.format({ service: "ecs", resource: "task", resourceName: "minecraft/*" }, this)
             ]
         }));
 
@@ -181,19 +186,5 @@ export class MinecraftStack extends cdk.Stack
         //         weight: 1,
         //     },
         // ]
-
-        // Export service ARN for cross-stack reference
-        new cdk.CfnOutput(this, 'MinecraftServiceArnOutput', {
-            value: service.service.serviceArn,
-            description: 'The ARN of the Minecraft ECS service.',
-            exportName: 'MinecraftServiceArn',
-        });
-
-        // Export task definition ARN for cross-stack reference
-        new cdk.CfnOutput(this, 'MinecraftTaskDefinitionArnOutput', {
-            value: service.taskDefinition.taskDefinitionArn,
-            description: 'The ARN of the Minecraft ECS task definition.',
-            exportName: 'MinecraftTaskDefinitionArn',
-        });
     }
 }

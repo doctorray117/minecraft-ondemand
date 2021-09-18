@@ -2,6 +2,7 @@ import * as cdk from '@aws-cdk/core';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from "@aws-cdk/aws-lambda";
 import * as fn from '@aws-cdk/aws-lambda-python';
+import { Arn } from '@aws-cdk/core';
 
 export interface MinecraftLauncherStackProps extends cdk.StackProps
 {
@@ -34,16 +35,17 @@ export class MinecraftLauncherStack extends cdk.Stack
             }
         });
 
-        const serviceArn = cdk.Fn.importValue('MinecraftServiceArn');
-        const taskDefinitionArn = cdk.Fn.importValue('MinecraftTaskDefinitionArn');
+        const serviceArn = Arn.format({
+            region: props.regionName,
+            service: "ecs",
+            resource: "service",
+            resourceName: `${props.clusterName}/${props.serviceName}`
+        }, this);
 
         // Allow the lambda function to control the ECS service
         launcherFunction.addToRolePolicy(new iam.PolicyStatement({
             actions: ["ecs:*"],
-            resources: [
-                serviceArn,
-                taskDefinitionArn
-            ]
+            resources: [serviceArn]
         }));
     }
 }
