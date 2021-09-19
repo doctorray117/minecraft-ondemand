@@ -28,7 +28,28 @@ function send_notification ()
 function zero_service ()
 {
   send_notification shutdown
-  echo Setting desired task count to zero.
+  echo Setting desired task count to zero & updating ip
+  cat << EOF >> minecraft-dns.json
+{
+  "Comment": "Fargate Public IP change for Minecraft Server",
+  "Changes": [
+    {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "$SERVERNAME",
+        "Type": "A",
+        "TTL": 30,
+        "ResourceRecords": [
+          {
+            "Value": "0.0.0.0"
+          }
+        ]
+      }
+    }
+  ]
+}
+EOF
+  aws route53 change-resource-record-sets --hosted-zone-id $DNSZONE --change-batch file://minecraft-dns.json
   aws ecs update-service --cluster $CLUSTER --service $SERVICE --desired-count 0
   exit 0
 }
