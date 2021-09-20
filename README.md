@@ -13,7 +13,7 @@ The process works as follows:
 3. CloudWatch forwards the query to a Lambda function.
 4. The Lambda function modifies an existing ECS Fargate service to a desired task count of 1.
 5. Fargate launches two containers, Minecraft and a watchdog, which updates the DNS record to the new IP
-6. The watchdog optionally sends a text message through Twilio and/or publishes to an SNS topic when the server is ready.
+6. The watchdog optionally sends a text message through Twilio/Telnyx and/or publishes to an SNS topic when the server is ready.
 7. Refresh Minecraft server list, server is ready to connect.
 8. After 10 minutes without a connection or 20 minutes after the last client disconnects (customizable) the watchdog sets the desired task count to zero and shuts down.
 
@@ -136,7 +136,7 @@ The magic that allows the on-demand idea to work without any "always on" infrast
 From your hosted zone, click `Configure query logging` on the top right.  Then, click `Grant Permission` so that it will apply appropriate policies for queries to be logged.  Finally, in `Log group` select `Create log group` and use the suggested name with your domain name in the string, `/aws/route53/yourdomainname.com` and click `Create`.
 
 ## Optional SNS Notifications
-You can receive a text or email or anything else you want to consume via Amazon SNS, if Twilio isn't your thing.  This also allows this to be a 100% AWS solution.
+You can receive a text or email or anything else you want to consume via Amazon SNS, if Twilio/Telnyx isn't your thing.  This also allows this to be a 100% AWS solution.
 
 From the SNS console, create a `Standard` topic called `minecraft-notifications`.  Also at your convenience, create a Subscription to the topic to a destination of your choice.  Email is easy and free, SMS is beyond the scope of this documentation but there's plenty of resources out there to help you set it up.
 
@@ -326,8 +326,11 @@ Under `Advanced container configuration` make these changes:
   - `TWILIOTO` : `+1XXXYYYZZZZ` (your cell phone to get a text on)
   - `TWILIOAID` : Twilio account ID
   - `TWILIOAUTH` : Twilio auth code
+  - `TELNYXFROM`  :  `+1XXXYYYZZZZ` (your telnyx number)
+  - `TELNYXTO`  :  `+1XXXYYYZZZZ` (your cell phone to get a text on)
+  - `TELNYXAPI`  :  Telnyx API key
 
-If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If publishing to an SNS topic, the `SNSTOPIC` variable must be specified.
+If using Twilio to alert you when the server is ready and when it turns off, all four twilio variables must be specified.  If using Telnyx to alert you when the server is read and when it turns off, all 3 telnyx variables must be specified. If publishing to an SNS topic, the `SNSTOPIC` variable must be specified.
 
 Click `Add` and then `Create` to create the task.
 
@@ -494,7 +497,7 @@ Check all of the above, but also ensure you're using an EFS Access Point with th
 Refresh.  Wait a minute, especially the first launch.  Check ECS to see that the containers are in the RUNNING state.  Open the running task, go to the logs tab, select minecraft and see if there are any errors on the logs.  Did you make sure you opened the right port (25565 TCP) to the world in the task security group??  Security groups can be edited from both the VPC and the EC2 console.
 
 ### Not getting text messages
-Are your Twilio vars valid?  Do you have sufficient funds on your Twilio account?  Check the logs on the watchdog container for any curl errors.
+Are your Twilio/Telnyx vars valid?  Do you have sufficient funds on your Twilio/Telnyx account?  Check the logs on the watchdog container for any curl errors.
 
 ## Server starts randomly?
 Remember, the server starts with a DNS query automatically.  So, if you've got buddies you've shared the server with, it may start up if they open their multiplayer screen to play on a different server if yours is in the list!  If this is an issue, it could probably be mitigated with a more advanced CloudWatch Subscription Filter that checks against the source IP address in addition to just the domain name, with it limiting to your ISP or location.
@@ -504,7 +507,7 @@ Remember, the server starts with a DNS query automatically.  So, if you've got b
 ## Concerned about cost overruns?
 Set up a [Billing Alert]!  You can get an email if your bill exceeds a certain amount.  Set it at $5 maybe?
 
-## Twilio setup / usage
+## Twilio/Telnyx setup / usage
 Open a free account at [Twilio], and load it up with $10 or so of credit.  You can purchase a phone number here for a small monthly fee, and pay per use text messaging.  Doing this will allow the container to send you a text message when the server is available for use.
 
 ## Suggestions, comments, concerns?
@@ -522,3 +525,4 @@ Open an issue, fork the repo, send me a pull request or a message.
   [Billing Alert]: <https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/monitor_estimated_charges_with_cloudwatch.html>
   [S3 Browser]: <https://s3browser.com>
   [Twilio]: <https://twilio.com>
+  [Telnyx]: <https://telnyx.com>
