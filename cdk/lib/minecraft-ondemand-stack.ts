@@ -4,7 +4,6 @@ import * as efs from '@aws-cdk/aws-efs';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as iam from '@aws-cdk/aws-iam';
-import { NetworkLoadBalancedFargateService } from '@aws-cdk/aws-ecs-patterns';
 
 export interface MinecraftStackProps extends cdk.StackProps
 {
@@ -92,37 +91,57 @@ export class MinecraftStack extends cdk.Stack
             containerInsights: true
         });
 
-        const service = new NetworkLoadBalancedFargateService(this, "MinecraftService", {
-            serviceName: props.serviceName,
-            cluster: cluster,
-            platformVersion: ecs.FargatePlatformVersion.VERSION1_4,
-            assignPublicIp: true,
-            // desiredCount: 0,
-            taskImageOptions: {
-                containerName: "minecraft-ecsfargate-watchdog",
-                image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
-                environment: {
-                    "CLUSTER": props.clusterName,
-                    "SERVICE": props.serviceName,
-                    "DNSZONE": props.hostedZoneId,
-                    "SERVERNAME": props.domainName,
-                    "SNSTOPIC": snsTopicArn,
-                    // "TWILIOFROM": "TODO",
-                    // "TWILIOTO": "TODO",
-                    // "TWILIOAID": "TODO",
-                    // "TWILIOAUTH": "TODO",
-                    "STARTUPMIN": props.startupMin.toString(),
-                    "SHUTDOWNMIN": props.shutdownMin.toString()
-                }
-            },
+        const taskDefinition = new ecs.FargateTaskDefinition(this, "MinecraftTaskDefinition", {
             memoryLimitMiB: 2048,
-            cpu: 1024
+            cpu: 1024,
+            family: "MinecraftTask",
+        });
+
+        const logDriver = new ecs.AwsLogDriver({ streamPrefix: "minecraft" });
+
+        const watchdogContainer = taskDefinition.addContainer("MinecraftWatchdogContainer", {
+            containerName: "watchdog",
+            image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
+            logging: logDriver,
+            environment: {
+                "CLUSTER": props.clusterName,
+                "SERVICE": props.serviceName,
+                "DNSZONE": props.hostedZoneId,
+                "SERVERNAME": props.domainName,
+                "SNSTOPIC": snsTopicArn,
+                // "TWILIOFROM": "TODO",
+                // "TWILIOTO": "TODO",
+                // "TWILIOAID": "TODO",
+                // "TWILIOAUTH": "TODO",
+                "STARTUPMIN": props.startupMin.toString(),
+                "SHUTDOWNMIN": props.shutdownMin.toString()
+            }
+        });
+
+        const serverContainer = taskDefinition.addContainer("MinecraftServerContainer", {
+            containerName: "minecraft-server",
+            image: ecs.ContainerImage.fromRegistry("itzg/minecraft-server"),
+            logging: logDriver,
+            environment: {
+                "EULA": "TRUE"
+            },
+            portMappings: [
+                { containerPort: 25565, hostPort: 25565 }
+            ]
+        });
+
+        const service = new ecs.FargateService(this, "MinecraftService", {
+            cluster: cluster,
+            desiredCount: 0,
+            taskDefinition: taskDefinition,
+            assignPublicIp: true,
+            serviceName: props.serviceName
         });
 
         const dataVolumeName = "MinecraftDataVolume";
 
         // TODO - This will generate a warning in the generated CFN due to CDK issue https://github.com/aws/aws-cdk/issues/15025
-        service.taskDefinition.addVolume({
+        taskDefinition.addVolume({
             name: dataVolumeName,
             efsVolumeConfiguration: {
                 fileSystemId: fileSystemDetails.fileSystemId,
@@ -131,17 +150,6 @@ export class MinecraftStack extends cdk.Stack
                     accessPointId: fileSystemDetails.accessPointId
                 }
             }
-        });
-
-        var serverContainer = service.taskDefinition.addContainer("MinecraftServerContainer", {
-            containerName: "minecraft-server",
-            image: ecs.ContainerImage.fromRegistry("itzg/minecraft-server"),
-            portMappings: [
-                { containerPort: 25565, hostPort: 25565 }
-            ],
-            environment: {
-                "EULA": "TRUE"
-            },
         });
 
         serverContainer.addMountPoints({
@@ -162,22 +170,22 @@ export class MinecraftStack extends cdk.Stack
         }));
 
         // Allow the ECS service to control itself
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+        taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: ["ecs:*"],
             resources: [
-                service.service.serviceArn,
+                service.serviceArn,
                 cdk.Arn.format({ service: "ecs", resource: "task", resourceName: "minecraft/*" }, this)
             ]
         }));
 
         // Allow the ECS service to understand which network interface is attached to it in order to properly update the DNS records
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+        taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: ["ec2:DescribeNetworkInterfaces"],
             resources: ["*"]
         }));
 
         // Allow the ECS service to update the DNS record with the service IP address
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+        taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: [
                 "route53:GetHostedZone",
                 "route53:ChangeResourceRecordSets",
@@ -189,13 +197,13 @@ export class MinecraftStack extends cdk.Stack
         }));
 
         // Allow the ECS service to get a list of hosted zones from Route53
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+        taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: ["route53:ListHostedZones"],
             resources: ["*"]
         }));
 
         // Allow the ECS service to access the EFS volume
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+        taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: [
                 "elasticfilesystem:ClientMount",
                 "elasticfilesystem:ClientWrite",
