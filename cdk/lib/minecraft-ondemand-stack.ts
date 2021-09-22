@@ -24,6 +24,8 @@ interface FileSystemDetails
     readonly accessPointId: string;
 }
 
+const minecraftPort = 25565;
+
 export class MinecraftStack extends cdk.Stack
 {
     constructor(scope: cdk.Construct, id: string, props: MinecraftStackProps)
@@ -124,7 +126,7 @@ export class MinecraftStack extends cdk.Stack
                 "EULA": "TRUE"
             },
             portMappings: [
-                { containerPort: 25565, hostPort: 25565 }
+                { containerPort: minecraftPort, hostPort: minecraftPort }
             ],
             essential: false
         });
@@ -216,8 +218,11 @@ export class MinecraftStack extends cdk.Stack
         }));
 
         // Open the NFS port so that the service can connect to the EFS volume
-        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049));
-        service.connections.allowTo(fileSystemDetails.fileSystem, ec2.Port.tcp(2049));
+        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "EFS read connections");
+        service.connections.allowTo(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "EFS write connections");
+
+        // Add an inbound rule on the service security group to allow connections to the server
+        service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port");
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
         // const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
