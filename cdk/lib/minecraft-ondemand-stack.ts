@@ -19,8 +19,7 @@ export interface MinecraftStackProps extends cdk.StackProps
 
 interface FileSystemDetails
 {
-    readonly fileSystemArn: string;
-    readonly fileSystemId: string;
+    readonly fileSystem: efs.FileSystem;
     readonly accessPointArn: string;
     readonly accessPointId: string;
 }
@@ -60,8 +59,7 @@ export class MinecraftStack extends cdk.Stack
         });
 
         return {
-            fileSystemArn: fileSystem.fileSystemArn,
-            fileSystemId: fileSystem.fileSystemId,
+            fileSystem: fileSystem,
             accessPointArn: accessPoint.accessPointArn,
             accessPointId: accessPoint.accessPointId
         };
@@ -144,7 +142,7 @@ export class MinecraftStack extends cdk.Stack
         taskDefinition.addVolume({
             name: dataVolumeName,
             efsVolumeConfiguration: {
-                fileSystemId: fileSystemDetails.fileSystemId,
+                fileSystemId: fileSystemDetails.fileSystem.fileSystemId,
                 transitEncryption: "ENABLED",
                 authorizationConfig: {
                     accessPointId: fileSystemDetails.accessPointId
@@ -208,13 +206,17 @@ export class MinecraftStack extends cdk.Stack
                 "elasticfilesystem:ClientMount",
                 "elasticfilesystem:ClientWrite",
                 "elasticfilesystem:DescribeFileSystems"],
-            resources: [fileSystemDetails.fileSystemArn],
+            resources: [fileSystemDetails.fileSystem.fileSystemArn],
             conditions: {
                 "StringEquals": {
                     "elasticfilesystem:AccessPointArn": fileSystemDetails.accessPointArn
                 }
             }
         }));
+
+        // Open the NFS port so that the service can connect to the EFS volume
+        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049));
+        service.connections.allowTo(fileSystemDetails.fileSystem, ec2.Port.tcp(2049));
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
         // const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
