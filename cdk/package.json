@@ -8,7 +8,9 @@
         "build": "tsc",
         "watch": "tsc -w",
         "cdk": "cdk",
-        "deploy": "cdk deploy --all --require-approval never --profile minecraft"
+        "synth": "cdk synth --profile minecraft",
+        "deploy": "cdk deploy --all --require-approval never --profile minecraft",
+        "destroy": "cdk destroy --all --profile minecraft"
     },
     "devDependencies": {
         "@aws-cdk/assert": "1.124.0",

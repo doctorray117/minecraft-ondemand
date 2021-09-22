@@ -14,7 +14,6 @@ const configuration = {
     serviceName: "minecraft-server",
     vpcId: "INSERT",
     hostedZoneId: "INSERT",
-    notificationEmail: "INSERT",
     domainName: "INSERT",
     shutdownMin: 20,
     startupMin: 10,
@@ -22,7 +21,8 @@ const configuration = {
         "MOTD": "Welcome to the server!",
         "MAX_PLAYERS": "10",
         "MODE": "CREATIVE"
-    }
+    },
+    fargateSpotPercentage: 100
 }
 
 const minecraftStack = new MinecraftStack(app, 'MinecraftStack', {

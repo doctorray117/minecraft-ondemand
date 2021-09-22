@@ -16,6 +16,7 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly shutdownMin: number;
     readonly notificationEmail?: string;
     readonly serverEnvironment: { [key: string]: string };
+    readonly fargateSpotPercentage?: number;
 }
 
 interface FileSystemDetails
@@ -43,7 +44,8 @@ export class MinecraftStack extends cdk.Stack
     private createFileSystem(vpc: ec2.IVpc): FileSystemDetails
     {
         const fileSystem = new efs.FileSystem(this, 'MinecraftFileSystem', {
-            vpc: vpc
+            vpc: vpc,
+            // removalPolicy: cdk.RemovalPolicy.DELETE
         });
 
         const accessPoint = fileSystem.addAccessPoint("MinecraftAccessPoint", {
@@ -85,7 +87,7 @@ export class MinecraftStack extends cdk.Stack
     private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails)
     {
         let snsTopicArn: string | undefined;
-        
+
         const cluster = new ecs.Cluster(this, "MinecraftCluster", {
             clusterName: props.clusterName,
             vpc: vpc,
@@ -236,18 +238,21 @@ export class MinecraftStack extends cdk.Stack
         service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port for client connections");
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
-        // const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
+        if (props.fargateSpotPercentage && props.fargateSpotPercentage > 0 && props.fargateSpotPercentage <= 100)
+        {
+            const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
 
-        // cfnService.launchType = undefined
-        // cfnService.capacityProviderStrategy = [
-        //     {
-        //         capacityProvider: 'FARGATE_SPOT',
-        //         weight: 4,
-        //     },
-        //     {
-        //         capacityProvider: 'FARGATE',
-        //         weight: 1,
-        //     },
-        // ]
+            cfnService.launchType = undefined
+            cfnService.capacityProviderStrategy = [
+                {
+                    capacityProvider: 'FARGATE_SPOT',
+                    weight: props.fargateSpotPercentage,
+                },
+                {
+                    capacityProvider: 'FARGATE',
+                    weight: 100 - props.fargateSpotPercentage,
+                },
+            ]
+        }
     }
 }
