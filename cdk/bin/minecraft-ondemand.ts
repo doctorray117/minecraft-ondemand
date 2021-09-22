@@ -13,8 +13,9 @@ const configuration = {
     clusterName: "minecraft",
     serviceName: "minecraft-server",
     vpcId: "INSERT",
-    hostedZoneId: "INSERT",
     domainName: "INSERT",
+    domainHostedZoneId: "INSERT",
+    domainQueryLogGroupName: "INSERT",
     shutdownMin: 20,
     startupMin: 10,
     serverEnvironment: {

@@ -2,13 +2,16 @@ import * as cdk from '@aws-cdk/core';
 import * as iam from '@aws-cdk/aws-iam';
 import * as lambda from "@aws-cdk/aws-lambda";
 import * as fn from '@aws-cdk/aws-lambda-python';
-import { Arn } from '@aws-cdk/core';
+import * as log from '@aws-cdk/aws-logs';
+import { LambdaDestination } from '@aws-cdk/aws-logs-destinations';
 
 export interface MinecraftLauncherStackProps extends cdk.StackProps
 {
     readonly clusterName: string;
     readonly serviceName: string;
     readonly serverRegion: string;
+    readonly domainName: string;
+    readonly domainQueryLogGroupName: string;
 }
 
 export class MinecraftLauncherStack extends cdk.Stack
@@ -35,7 +38,7 @@ export class MinecraftLauncherStack extends cdk.Stack
             }
         });
 
-        const serviceArn = Arn.format({
+        const serviceArn = cdk.Arn.format({
             region: props.serverRegion,
             service: "ecs",
             resource: "service",
@@ -47,5 +50,14 @@ export class MinecraftLauncherStack extends cdk.Stack
             actions: ["ecs:*"],
             resources: [serviceArn]
         }));
+
+        const logGroup = log.LogGroup.fromLogGroupName(this, "DomainQueryLogGroup", props.domainQueryLogGroupName);
+        const lambdaDestination = new LambdaDestination(launcherFunction);
+        
+        new log.SubscriptionFilter(this, "MinecraftLauncherSubscriptionFilter", {
+            logGroup: logGroup,
+            destination: lambdaDestination,
+            filterPattern: log.FilterPattern.anyTerm(props.domainName)
+        });
     }
 }

@@ -10,7 +10,7 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly clusterName: string;
     readonly serviceName: string;
     readonly vpcId: string;
-    readonly hostedZoneId: string;
+    readonly domainHostedZoneId: string;
     readonly domainName: string;
     readonly startupMin: number;
     readonly shutdownMin: number;
@@ -119,7 +119,7 @@ export class MinecraftStack extends cdk.Stack
             environment: {
                 "CLUSTER": props.clusterName,
                 "SERVICE": props.serviceName,
-                "DNSZONE": props.hostedZoneId,
+                "DNSZONE": props.domainHostedZoneId,
                 "SERVERNAME": props.domainName,
                 // "TWILIOFROM": "TODO",
                 // "TWILIOTO": "TODO",
@@ -206,7 +206,7 @@ export class MinecraftStack extends cdk.Stack
                 "route53:ListResourceRecordSets"
             ],
             resources: [
-                cdk.Arn.format({ service: "route53", account: "", region: "", resource: "hostedzone", resourceName: props.hostedZoneId }, this)
+                cdk.Arn.format({ service: "route53", account: "", region: "", resource: "hostedzone", resourceName: props.domainHostedZoneId }, this)
             ]
         }));
 
