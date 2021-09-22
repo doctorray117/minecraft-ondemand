@@ -31,6 +31,8 @@ const domainStack = new DomainStack(app, 'minecraft-domain-stack', {
 const minecraftStack = new MinecraftStack(app, 'minecraft-server-stack', {
   env: {
     region: config.serverRegion,
+    /* Account must be specified to allow for VPC lookup */
+    account: process.env.CDK_DEFAULT_ACCOUNT,
   },
   config,
 });

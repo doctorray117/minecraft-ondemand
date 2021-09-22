@@ -16,6 +16,7 @@ export interface StackConfig {
   useFargateSpot: boolean;
   taskMemory: number;
   taskCpu: number;
+  vpcId: string;
   snsEmailAddress: string;
   twilio: TwilioConfig;
   minecraftImageEnv: MinecraftImageEnv;

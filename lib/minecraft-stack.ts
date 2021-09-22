@@ -28,10 +28,12 @@ export class MinecraftStack extends Stack {
 
     const { config } = props;
 
-    const vpc = new ec2.Vpc(this, 'Vpc', {
-      maxAzs: 3,
-      natGateways: 0,
-    });
+    const vpc = config.vpcId
+      ? ec2.Vpc.fromLookup(this, 'Vpc', { vpcId: config.vpcId })
+      : new ec2.Vpc(this, 'Vpc', {
+          maxAzs: 3,
+          natGateways: 0,
+        });
 
     const fileSystem = new efs.FileSystem(this, 'FileSystem', {
       vpc,
@@ -121,10 +123,12 @@ export class MinecraftStack extends Stack {
         environment: config.minecraftImageEnv,
         essential: false,
         taskDefinition,
-        logging: config.debug ? new ecs.AwsLogDriver({
-          logRetention: logs.RetentionDays.THREE_DAYS,
-          streamPrefix: constants.MC_SERVER_CONTAINER_NAME,
-        }) : undefined,
+        logging: config.debug
+          ? new ecs.AwsLogDriver({
+              logRetention: logs.RetentionDays.THREE_DAYS,
+              streamPrefix: constants.MC_SERVER_CONTAINER_NAME,
+            })
+          : undefined,
       }
     );
 
@@ -189,16 +193,20 @@ export class MinecraftStack extends Stack {
     /* Create SNS Topic if SNS_EMAIL is provided */
     if (config.snsEmailAddress) {
       const snsTopic = new sns.Topic(this, 'ServerSnsTopic', {
-        displayName: 'Minecraft Server Notifications'
+        displayName: 'Minecraft Server Notifications',
       });
 
       snsTopic.grantPublish(ecsTaskRole);
 
-      const emailSubscription = new sns.Subscription(this, 'EmailSubscription', {
-        protocol: sns.SubscriptionProtocol.EMAIL,
-        topic: snsTopic,
-        endpoint: config.snsEmailAddress,
-      });
+      const emailSubscription = new sns.Subscription(
+        this,
+        'EmailSubscription',
+        {
+          protocol: sns.SubscriptionProtocol.EMAIL,
+          topic: snsTopic,
+          endpoint: config.snsEmailAddress,
+        }
+      );
       snsTopicArn = snsTopic.topicArn;
     }
 
@@ -207,9 +215,13 @@ export class MinecraftStack extends Stack {
       'WatchDogContainer',
       {
         containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
-        image: isDockerInstalled() ? ecs.ContainerImage.fromAsset(
-          path.resolve(__dirname, '../minecraft-ecsfargate-watchdog/'),
-        ) : ecs.ContainerImage.fromRegistry('doctorray/minecraft-ecsfargate-watchdog'),
+        image: isDockerInstalled()
+          ? ecs.ContainerImage.fromAsset(
+              path.resolve(__dirname, '../minecraft-ecsfargate-watchdog/')
+            )
+          : ecs.ContainerImage.fromRegistry(
+              'doctorray/minecraft-ecsfargate-watchdog'
+            ),
         essential: true,
         taskDefinition: taskDefinition,
         environment: {
@@ -225,10 +237,12 @@ export class MinecraftStack extends Stack {
           STARTUPMIN: config.startupMinutes,
           SHUTDOWNMIN: config.shutdownMinutes,
         },
-        logging: config.debug ? new ecs.AwsLogDriver({
-          logRetention: logs.RetentionDays.THREE_DAYS,
-          streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
-        }) : undefined,
+        logging: config.debug
+          ? new ecs.AwsLogDriver({
+              logRetention: logs.RetentionDays.THREE_DAYS,
+              streamPrefix: constants.WATCHDOG_SERVER_CONTAINER_NAME,
+            })
+          : undefined,
       }
     );
 

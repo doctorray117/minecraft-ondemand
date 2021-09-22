@@ -99,6 +99,11 @@ export const resolveConfig = (): StackConfig => ({
    */
   taskMemory: +(process.env.TASK_MEMORY || 2048),
   /**
+   * The ID of an already existing VPC to deploy the server to. When this value
+   * is not set, a new VPC is automatically created by default.
+   */
+  vpcId: process.env.VPC_ID || '',
+  /**
    * Additional environment variables to be passed to the [Minecraft Docker Server](https://github.com/itzg/docker-minecraft-server/blob/master/README.md).
    */
   minecraftImageEnv: resolveMinecraftEnvVars(process.env.MINECRAFT_IMAGE_ENV_VARS_JSON),

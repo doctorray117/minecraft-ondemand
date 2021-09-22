@@ -16,7 +16,7 @@
 
 - [ ] Parameterize additional settings
 - [x] Add .env for configs
-- [ ] Optional resource creation/existing resource reuse
+- [x] Optional resource creation/existing resource reuse
 
 ## Housekeeping
 
