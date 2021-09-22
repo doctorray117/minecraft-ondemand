@@ -117,7 +117,7 @@ export class MinecraftStack extends cdk.Stack
         });
 
         const serverContainer = taskDefinition.addContainer("MinecraftServerContainer", {
-            containerName: "minecraft-server",
+            containerName: "server",
             image: ecs.ContainerImage.fromRegistry("itzg/minecraft-server"),
             logging: logDriver,
             environment: {
@@ -125,7 +125,8 @@ export class MinecraftStack extends cdk.Stack
             },
             portMappings: [
                 { containerPort: 25565, hostPort: 25565 }
-            ]
+            ],
+            essential: false
         });
 
         const service = new ecs.FargateService(this, "MinecraftService", {
