@@ -11,8 +11,8 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly clusterName: string;
     readonly serviceName: string;
     readonly vpcId: string;
-    readonly dnsZone: string;
-    readonly serverName: string;
+    readonly hostedZoneId: string;
+    readonly domainName: string;
     readonly startupMin: number;
     readonly shutdownMin: number;
     readonly notificationEmail: string;
@@ -20,8 +20,10 @@ export interface MinecraftStackProps extends cdk.StackProps
 
 interface FileSystemDetails
 {
-    fileSystemId: string;
-    accessPointId: string;
+    readonly fileSystemArn: string;
+    readonly fileSystemId: string;
+    readonly accessPointArn: string;
+    readonly accessPointId: string;
 }
 
 export class MinecraftStack extends cdk.Stack
@@ -59,7 +61,9 @@ export class MinecraftStack extends cdk.Stack
         });
 
         return {
+            fileSystemArn: fileSystem.fileSystemArn,
             fileSystemId: fileSystem.fileSystemId,
+            accessPointArn: accessPoint.accessPointArn,
             accessPointId: accessPoint.accessPointId
         };
     }
@@ -100,8 +104,8 @@ export class MinecraftStack extends cdk.Stack
                 environment: {
                     "CLUSTER": props.clusterName,
                     "SERVICE": props.serviceName,
-                    "DNSZONE": props.dnsZone,
-                    "SERVERNAME": props.serverName,
+                    "DNSZONE": props.hostedZoneId,
+                    "SERVERNAME": props.domainName,
                     "SNSTOPIC": snsTopicArn,
                     // "TWILIOFROM": "TODO",
                     // "TWILIOTO": "TODO",
@@ -170,6 +174,38 @@ export class MinecraftStack extends cdk.Stack
         service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
             actions: ["ec2:DescribeNetworkInterfaces"],
             resources: ["*"]
+        }));
+
+        // Allow the ECS service to update the DNS record with the service IP address
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: [
+                "route53:GetHostedZone",
+                "route53:ChangeResourceRecordSets",
+                "route53:ListResourceRecordSets"
+            ],
+            resources: [
+                cdk.Arn.format({ service: "route53", account: "", region: "", resource: "hostedzone", resourceName: props.hostedZoneId }, this)
+            ]
+        }));
+
+        // Allow the ECS service to get a list of hosted zones from Route53
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: ["route53:ListHostedZones"],
+            resources: ["*"]
+        }));
+
+        // Allow the ECS service to access the EFS volume
+        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+            actions: [
+                "elasticfilesystem:ClientMount",
+                "elasticfilesystem:ClientWrite",
+                "elasticfilesystem:DescribeFileSystems"],
+            resources: [fileSystemDetails.fileSystemArn],
+            conditions: {
+                "StringEquals": {
+                    "elasticfilesystem:AccessPointArn": fileSystemDetails.accessPointArn
+                }
+            }
         }));
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs

@@ -8,7 +8,7 @@ export interface MinecraftLauncherStackProps extends cdk.StackProps
 {
     readonly clusterName: string;
     readonly serviceName: string;
-    readonly regionName: string;
+    readonly serverRegion: string;
 }
 
 export class MinecraftLauncherStack extends cdk.Stack
@@ -29,14 +29,14 @@ export class MinecraftLauncherStack extends cdk.Stack
 
             runtime: lambda.Runtime.PYTHON_3_9,
             environment: {
-                "REGION_NAME": props.regionName,
+                "REGION_NAME": props.serverRegion,
                 "CLUSTER_NAME": props.clusterName,
                 "SERVICE_NAME": props.serviceName
             }
         });
 
         const serviceArn = Arn.format({
-            region: props.regionName,
+            region: props.serverRegion,
             service: "ecs",
             resource: "service",
             resourceName: `${props.clusterName}/${props.serviceName}`
