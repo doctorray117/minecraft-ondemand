@@ -14,7 +14,7 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly domainName: string;
     readonly startupMin: number;
     readonly shutdownMin: number;
-    readonly notificationEmail: string;
+    readonly notificationEmail?: string;
     readonly serverEnvironment: { [key: string]: string };
 }
 
@@ -37,9 +37,7 @@ export class MinecraftStack extends cdk.Stack
 
         const fileSystemDetails = this.createFileSystem(vpc);
 
-        const snsTopicArn = this.createSnsTopic(props);
-
-        this.createEcs(props, vpc, fileSystemDetails, snsTopicArn);
+        this.createEcs(props, vpc, fileSystemDetails);
     }
 
     private createFileSystem(vpc: ec2.IVpc): FileSystemDetails
@@ -68,7 +66,7 @@ export class MinecraftStack extends cdk.Stack
         };
     }
 
-    private createSnsTopic(props: MinecraftStackProps): string
+    private createSnsTopic(notificationEmail: string): string
     {
         const topic = new sns.Topic(this, "MinecraftTopic", {
             topicName: "minecraft-notifications",
@@ -78,14 +76,16 @@ export class MinecraftStack extends cdk.Stack
         new sns.Subscription(this, "MinecraftEmailSubscription", {
             topic: topic,
             protocol: sns.SubscriptionProtocol.EMAIL,
-            endpoint: props.notificationEmail,
+            endpoint: notificationEmail,
         });
 
         return topic.topicArn;
     }
 
-    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails, snsTopicArn: string)
+    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails)
     {
+        let snsTopicArn: string | undefined;
+        
         const cluster = new ecs.Cluster(this, "MinecraftCluster", {
             clusterName: props.clusterName,
             vpc: vpc,
@@ -100,6 +100,16 @@ export class MinecraftStack extends cdk.Stack
 
         const logDriver = new ecs.AwsLogDriver({ streamPrefix: "minecraft" });
 
+        const additionalWatchdogEnvironment: { [key: string]: string; } = {};
+
+        // If a notification email was provided, setup a subscription and configure the server to notify the user of events
+        if (props.notificationEmail)
+        {
+            snsTopicArn = this.createSnsTopic(props.notificationEmail);
+
+            additionalWatchdogEnvironment["SNSTOPIC"] = snsTopicArn;
+        }
+
         const watchdogContainer = taskDefinition.addContainer("MinecraftWatchdogContainer", {
             containerName: "watchdog",
             image: ecs.ContainerImage.fromRegistry("doctorray/minecraft-ecsfargate-watchdog"),
@@ -109,13 +119,13 @@ export class MinecraftStack extends cdk.Stack
                 "SERVICE": props.serviceName,
                 "DNSZONE": props.hostedZoneId,
                 "SERVERNAME": props.domainName,
-                "SNSTOPIC": snsTopicArn,
                 // "TWILIOFROM": "TODO",
                 // "TWILIOTO": "TODO",
                 // "TWILIOAID": "TODO",
                 // "TWILIOAUTH": "TODO",
                 "STARTUPMIN": props.startupMin.toString(),
-                "SHUTDOWNMIN": props.shutdownMin.toString()
+                "SHUTDOWNMIN": props.shutdownMin.toString(),
+                ...additionalWatchdogEnvironment
             }
         });
 
@@ -162,16 +172,14 @@ export class MinecraftStack extends cdk.Stack
             containerPath: "/data"
         });
 
-        // TODO - The below policy statements are not getting applied to the task role until AFTER the service is created.
-        // The service creation does not complete until the service starts successfully (because CDK is mandating the desirec count > 0).
-        // Service fails to start because it does not have the required permissions to control ECS (specified below).
-        // Solution - Work out how to ensure desired count = 0 on service creation to stop the service form needing to start up successfully.
-
         // Allow the ECS task to publish to the SNS topic
-        service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
-            actions: ["sns:Publish"],
-            resources: [snsTopicArn]
-        }));
+        if (snsTopicArn)
+        {
+            service.taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
+                actions: ["sns:Publish"],
+                resources: [snsTopicArn]
+            }));
+        }
 
         // Allow the ECS service to control itself
         taskDefinition.addToTaskRolePolicy(new iam.PolicyStatement({
