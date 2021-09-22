@@ -16,7 +16,7 @@ import { Construct } from 'constructs';
 import { constants } from './constants';
 import { SSMParameterReader } from './ssm-parameter-reader';
 import { StackConfig } from './types';
-import { isDockerInstalled } from './util';
+import { getMinecraftServerConfig, isDockerInstalled } from './util';
 
 interface MinecraftStackProps extends StackProps {
   config: Readonly<StackConfig>;
@@ -111,14 +111,22 @@ export class MinecraftStack extends Stack {
       }
     );
 
+    const minecraftServerConfig = getMinecraftServerConfig(
+      config.minecraftEdition
+    );
+
     const minecraftServerContainer = new ecs.ContainerDefinition(
       this,
       'ServerContainer',
       {
         containerName: constants.MC_SERVER_CONTAINER_NAME,
-        image: ecs.ContainerImage.fromRegistry('itzg/minecraft-server'),
+        image: ecs.ContainerImage.fromRegistry(minecraftServerConfig.image),
         portMappings: [
-          { containerPort: 25565, hostPort: 25565, protocol: ecs.Protocol.TCP },
+          {
+            containerPort: minecraftServerConfig.port,
+            hostPort: minecraftServerConfig.port,
+            protocol: minecraftServerConfig.protocol,
+          },
         ],
         environment: config.minecraftImageEnv,
         essential: false,
@@ -149,7 +157,7 @@ export class MinecraftStack extends Stack {
 
     serviceSecurityGroup.addIngressRule(
       ec2.Peer.anyIpv4(),
-      ec2.Port.tcp(25565)
+      minecraftServerConfig.ingressRulePort
     );
 
     const minecraftServerService = new ecs.FargateService(
