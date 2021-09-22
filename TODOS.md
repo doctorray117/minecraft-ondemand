@@ -29,7 +29,7 @@
 
 ## Enhancements
 
-- [ ] Add handler for users not running docker
+- [x] Add handler for users not running docker
 - [ ] Add optional billing alert
 - [ ] EFS -> S3 DataSync
 - [ ] Integration testing
