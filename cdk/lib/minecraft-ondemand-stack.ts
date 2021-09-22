@@ -240,9 +240,9 @@ export class MinecraftStack extends cdk.Stack
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
         if (props.fargateSpotPercentage && props.fargateSpotPercentage > 0 && props.fargateSpotPercentage <= 100)
         {
-            const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
+            const cfnService = service.node.tryFindChild('Service') as ecs.CfnService;
 
-            cfnService.launchType = undefined
+            cfnService.launchType = undefined;
             cfnService.capacityProviderStrategy = [
                 {
                     capacityProvider: 'FARGATE_SPOT',
@@ -252,7 +252,7 @@ export class MinecraftStack extends cdk.Stack
                     capacityProvider: 'FARGATE',
                     weight: 100 - props.fargateSpotPercentage,
                 },
-            ]
+            ];
         }
     }
 }
