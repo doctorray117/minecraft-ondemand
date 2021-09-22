@@ -6,6 +6,7 @@ import { MinecraftLauncherStack } from '../lib/minecraft-launcher-stack';
 
 const app = new cdk.App();
 
+// Available server environment variables - https://github.com/itzg/docker-minecraft-server/blob/master/README.md#server-configuration
 const configuration = {
     account: "INSERT",
     region: "INSERT",
@@ -16,7 +17,12 @@ const configuration = {
     notificationEmail: "INSERT",
     domainName: "INSERT",
     shutdownMin: 20,
-    startupMin: 10
+    startupMin: 10,
+    serverEnvironment: {
+        "MOTD": "Welcome to the server!",
+        "MAX_PLAYERS": "10",
+        "MODE": "CREATIVE"
+    }
 }
 
 const minecraftStack = new MinecraftStack(app, 'MinecraftStack', {

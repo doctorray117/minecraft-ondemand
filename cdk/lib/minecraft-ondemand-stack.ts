@@ -15,6 +15,7 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly startupMin: number;
     readonly shutdownMin: number;
     readonly notificationEmail: string;
+    readonly serverEnvironment: { [key: string]: string };
 }
 
 interface FileSystemDetails
@@ -123,7 +124,9 @@ export class MinecraftStack extends cdk.Stack
             image: ecs.ContainerImage.fromRegistry("itzg/minecraft-server"),
             logging: logDriver,
             environment: {
-                "EULA": "TRUE"
+                "EULA": "TRUE",
+                "OVERRIDE_SERVER_PROPERTIES": "TRUE",
+                ...props.serverEnvironment
             },
             portMappings: [
                 { containerPort: minecraftPort, hostPort: minecraftPort }
@@ -218,11 +221,11 @@ export class MinecraftStack extends cdk.Stack
         }));
 
         // Open the NFS port so that the service can connect to the EFS volume
-        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "EFS read connections");
-        service.connections.allowTo(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "EFS write connections");
+        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "Allow the Minecraft server to read from the EFS volume");
+        fileSystemDetails.fileSystem.connections.allowFrom(service, ec2.Port.tcp(2049), "Allow the Minecraft server to write to the EFS volume");
 
         // Add an inbound rule on the service security group to allow connections to the server
-        service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port");
+        service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port for client connections");
 
         // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
         // const cfnService = service.node.tryFindChild('Service') as ecs.CfnService
