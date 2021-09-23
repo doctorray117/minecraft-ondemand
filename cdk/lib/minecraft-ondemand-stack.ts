@@ -4,6 +4,8 @@ import * as efs from '@aws-cdk/aws-efs';
 import * as ecs from '@aws-cdk/aws-ecs';
 import * as sns from '@aws-cdk/aws-sns';
 import * as iam from '@aws-cdk/aws-iam';
+import * as s3 from '@aws-cdk/aws-s3';
+import * as sync from '@aws-cdk/aws-datasync';
 
 export interface MinecraftStackProps extends cdk.StackProps
 {
@@ -17,6 +19,7 @@ export interface MinecraftStackProps extends cdk.StackProps
     readonly notificationEmail?: string;
     readonly serverEnvironment: { [key: string]: string };
     readonly fargateSpotPercentage?: number;
+    readonly enableFileSync?: boolean;
 }
 
 interface FileSystemDetails
@@ -27,6 +30,7 @@ interface FileSystemDetails
 }
 
 const minecraftPort = 25565;
+const accessPointPath = "/minecraft";
 
 export class MinecraftStack extends cdk.Stack
 {
@@ -38,18 +42,23 @@ export class MinecraftStack extends cdk.Stack
 
         const fileSystemDetails = this.createFileSystem(vpc);
 
-        this.createEcs(props, vpc, fileSystemDetails);
+        const serviceSecurityGroups = this.createEcs(props, vpc, fileSystemDetails);
+
+        if (props.enableFileSync)
+        {
+            this.createFileSync(props, fileSystemDetails, vpc, serviceSecurityGroups);
+        }
     }
 
     private createFileSystem(vpc: ec2.IVpc): FileSystemDetails
     {
         const fileSystem = new efs.FileSystem(this, 'MinecraftFileSystem', {
             vpc: vpc,
-            // removalPolicy: cdk.RemovalPolicy.DELETE
+            // removalPolicy: cdk.RemovalPolicy.DESTROY
         });
 
         const accessPoint = fileSystem.addAccessPoint("MinecraftAccessPoint", {
-            path: "/minecraft",
+            path: accessPointPath,
             posixUser: {
                 uid: "1000",
                 gid: "1000"
@@ -84,7 +93,7 @@ export class MinecraftStack extends cdk.Stack
         return topic.topicArn;
     }
 
-    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails)
+    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails): ec2.ISecurityGroup[]
     {
         let snsTopicArn: string | undefined;
 
@@ -254,5 +263,104 @@ export class MinecraftStack extends cdk.Stack
                 },
             ];
         }
+
+        return service.connections.securityGroups;
+    }
+
+    private createFileSync(props: MinecraftStackProps, fileSystemDetails: FileSystemDetails, vpc: ec2.IVpc, serviceSecurityGroups: ec2.ISecurityGroup[])
+    {
+        const bucket = new s3.Bucket(this, "MinecraftFileSyncBucket", {
+            bucketName: `${props.domainName}-minecraft-files`,
+            versioned: true,
+            encryption: s3.BucketEncryption.KMS_MANAGED,
+            // removalPolicy: cdk.RemovalPolicy.DESTROY,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        });
+
+        const bucketSyncAccessRole = new iam.Role(this, "MinecraftBucketSyncAccessRole", {
+            assumedBy: new iam.ServicePrincipal("datasync.amazonaws.com")
+        });
+
+        bucketSyncAccessRole.addToPolicy(new iam.PolicyStatement({
+            actions: [
+                "s3:GetBucketLocation",
+                "s3:ListBucket",
+                "s3:ListBucketMultipartUploads"
+            ],
+            resources: [bucket.bucketArn]
+        }));
+
+        bucketSyncAccessRole.addToPolicy(new iam.PolicyStatement({
+            actions: [
+                "s3:AbortMultipartUpload",
+                "s3:DeleteObject",
+                "s3:GetObject",
+                "s3:ListMultipartUploadParts",
+                "s3:PutObjectTagging",
+                "s3:GetObjectTagging",
+                "s3:PutObject"
+            ],
+            resources: [`${bucket.bucketArn}/*`]
+        }));
+
+        const bucketLocation = new sync.CfnLocationS3(this, "MinecraftS3Location", {
+            s3BucketArn: bucket.bucketArn,
+            subdirectory: accessPointPath,
+            s3StorageClass: "STANDARD",
+            s3Config: {
+                bucketAccessRoleArn: bucketSyncAccessRole.roleArn
+            }
+        });
+
+        if (vpc.publicSubnets.length < 1)
+        {
+            throw new Error("VPC needs at least one public subnet to create the data sync tasks.");
+        }
+
+        const subnetArn = cdk.Arn.format({
+            service: "ec2",
+            resource: "subnet",
+            resourceName: vpc.publicSubnets[0].subnetId
+        }, this);
+
+        const securityGroupArns = serviceSecurityGroups.map(group => cdk.Arn.format({
+            service: "ec2",
+            resource: "security-group",
+            resourceName: group.securityGroupId
+        }, this));
+
+        const efsLocation = new sync.CfnLocationEFS(this, "MinecraftEfsLocation", {
+            efsFilesystemArn: fileSystemDetails.fileSystem.fileSystemArn,
+            ec2Config: {
+                securityGroupArns: securityGroupArns,
+                subnetArn: subnetArn
+            },
+            subdirectory: accessPointPath
+        });
+
+        new sync.CfnTask(this, "MinecraftEfsToS3SyncTask", {
+            name: "minecraft-efs-to-s3",
+            sourceLocationArn: efsLocation.attrLocationArn,
+            destinationLocationArn: bucketLocation.attrLocationArn,
+            excludes: [
+                { filterType: "SIMPLE_PATTERN", value: "*.jar|/world|/logs" }
+            ],
+            options: {
+                transferMode: "CHANGED",
+                overwriteMode: "ALWAYS",
+                logLevel: "OFF"
+            }
+        });
+
+        new sync.CfnTask(this, "MinecraftS3ToEfsSyncTask", {
+            name: "minecraft-s3-to-efs",
+            sourceLocationArn: bucketLocation.attrLocationArn,
+            destinationLocationArn: efsLocation.attrLocationArn,
+            options: {
+                transferMode: "CHANGED",
+                overwriteMode: "ALWAYS",
+                logLevel: "OFF"
+            }
+        });
     }
 }

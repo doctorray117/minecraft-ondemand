@@ -171,6 +171,13 @@
     constructs "^3.3.69"
     punycode "^2.1.1"
 
+"@aws-cdk/aws-datasync@^1.124.0":
+  version "1.124.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-datasync/-/aws-datasync-1.124.0.tgz#b728de899787d6a4272de4acb17bf2a6f8140a41"
+  integrity sha512-H9XJklIa9TpiGhkesc8YjakYwJ+HYoaxoVlMRkMsTODSGtiVJQpRCMlC2g8kSHV0TK8h7Jzh0fzfU0CncEvspg==
+  dependencies:
+    "@aws-cdk/core" "1.124.0"
+
 "@aws-cdk/aws-ec2@1.124.0", "@aws-cdk/aws-ec2@^1.124.0":
   version "1.124.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-ec2/-/aws-ec2-1.124.0.tgz#9bd5f1cc7d9efab4e9d1c7ac99f17e5ec5b2a8b8"
@@ -439,7 +446,7 @@
     "@aws-cdk/cx-api" "1.124.0"
     constructs "^3.3.69"
 
-"@aws-cdk/aws-s3@1.124.0":
+"@aws-cdk/aws-s3@1.124.0", "@aws-cdk/aws-s3@^1.124.0":
   version "1.124.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-s3/-/aws-s3-1.124.0.tgz#19c8d2af484ec0db6eb8715b837ec3ae371173dc"
   integrity sha512-9S0NZrIMX9wf2snJZVrumR3eSTExAznFBA/vgnVfGulcp9O+U81TEygHPORWSSB23pUGk2e0tDRQHKsrZ4v/aA==

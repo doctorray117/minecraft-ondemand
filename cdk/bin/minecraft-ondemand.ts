@@ -23,7 +23,8 @@ const configuration = {
         "MAX_PLAYERS": "10",
         "MODE": "CREATIVE"
     },
-    fargateSpotPercentage: 100
+    fargateSpotPercentage: 100,
+    enableFileSync: true
 }
 
 const minecraftStack = new MinecraftStack(app, 'MinecraftStack', {
@@ -37,4 +38,4 @@ const minecraftLauncherStack = new MinecraftLauncherStack(app, 'MinecraftLaunche
     ...configuration
 });
 
-minecraftLauncherStack.addDependency(minecraftStack, "The Minecraft launcher stack requires the ECS service ARNs to setup permissions to control the service.");
+minecraftLauncherStack.addDependency(minecraftStack, "The Minecraft launcher stack requires the ECS service to be created.");
