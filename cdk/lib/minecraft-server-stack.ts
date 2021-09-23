@@ -7,7 +7,7 @@ import * as iam from '@aws-cdk/aws-iam';
 import * as s3 from '@aws-cdk/aws-s3';
 import * as sync from '@aws-cdk/aws-datasync';
 
-export interface MinecraftStackProps extends cdk.StackProps
+export interface MinecraftServerStackProps extends cdk.StackProps
 {
     readonly clusterName: string;
     readonly serviceName: string;
@@ -32,9 +32,9 @@ interface FileSystemDetails
 const minecraftPort = 25565;
 const accessPointPath = "/minecraft";
 
-export class MinecraftStack extends cdk.Stack
+export class MinecraftServerStack extends cdk.Stack
 {
-    constructor(scope: cdk.Construct, id: string, props: MinecraftStackProps)
+    constructor(scope: cdk.Construct, id: string, props: MinecraftServerStackProps)
     {
         super(scope, id, props);
 
@@ -93,7 +93,7 @@ export class MinecraftStack extends cdk.Stack
         return topic.topicArn;
     }
 
-    private createEcs(props: MinecraftStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails): ec2.ISecurityGroup[]
+    private createEcs(props: MinecraftServerStackProps, vpc: ec2.IVpc, fileSystemDetails: FileSystemDetails): ec2.ISecurityGroup[]
     {
         let snsTopicArn: string | undefined;
 
@@ -267,7 +267,7 @@ export class MinecraftStack extends cdk.Stack
         return service.connections.securityGroups;
     }
 
-    private createFileSync(props: MinecraftStackProps, fileSystemDetails: FileSystemDetails, vpc: ec2.IVpc, serviceSecurityGroups: ec2.ISecurityGroup[])
+    private createFileSync(props: MinecraftServerStackProps, fileSystemDetails: FileSystemDetails, vpc: ec2.IVpc, serviceSecurityGroups: ec2.ISecurityGroup[])
     {
         const bucket = new s3.Bucket(this, "MinecraftFileSyncBucket", {
             bucketName: `${props.domainName}-minecraft-files`,

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import 'source-map-support/register';
 import * as cdk from '@aws-cdk/core';
-import { MinecraftStack } from '../lib/minecraft-ondemand-stack';
+import { MinecraftServerStack } from '../lib/minecraft-server-stack';
 import { MinecraftLauncherStack } from '../lib/minecraft-launcher-stack';
 
 const app = new cdk.App();
@@ -27,7 +27,7 @@ const configuration = {
     enableFileSync: true
 }
 
-const minecraftStack = new MinecraftStack(app, 'MinecraftStack', {
+const minecraftStack = new MinecraftServerStack(app, 'MinecraftServerStack', {
     env: { account: configuration.account, region: configuration.region },
     ...configuration
 });
