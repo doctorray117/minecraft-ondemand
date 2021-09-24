@@ -240,8 +240,8 @@ export class MinecraftServerStack extends cdk.Stack
         }));
 
         // Open the NFS port so that the service can connect to the EFS volume
-        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(2049), "Allow the Minecraft server to read from the EFS volume");
-        fileSystemDetails.fileSystem.connections.allowFrom(service, ec2.Port.tcp(2049), "Allow the Minecraft server to write to the EFS volume");
+        service.connections.allowFrom(fileSystemDetails.fileSystem, ec2.Port.tcp(efs.FileSystem.DEFAULT_PORT), "Allow the Minecraft server to read from the EFS volume");
+        fileSystemDetails.fileSystem.connections.allowFrom(service, ec2.Port.tcp(efs.FileSystem.DEFAULT_PORT), "Allow the Minecraft server to write to the EFS volume");
 
         // Add an inbound rule on the service security group to allow connections to the server
         service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port for client connections");
