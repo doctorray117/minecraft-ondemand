@@ -24,9 +24,8 @@ export interface MinecraftServerStackProps extends cdk.StackProps
 
 interface FileSystemDetails
 {
-    readonly fileSystem: efs.FileSystem;
-    readonly accessPointArn: string;
-    readonly accessPointId: string;
+    readonly fileSystem: efs.IFileSystem;
+    readonly accessPoint: efs.IAccessPoint;
 }
 
 const minecraftPort = 25565;
@@ -46,7 +45,7 @@ export class MinecraftServerStack extends cdk.Stack
 
         if (props.enableFileSync)
         {
-            this.createFileSync(props.domainName, fileSystemDetails.fileSystem.fileSystemArn, vpc.publicSubnets, serviceSecurityGroups);
+            this.createFileSync(props.domainName, fileSystemDetails, vpc.publicSubnets, serviceSecurityGroups);
         }
     }
 
@@ -72,8 +71,7 @@ export class MinecraftServerStack extends cdk.Stack
 
         return {
             fileSystem: fileSystem,
-            accessPointArn: accessPoint.accessPointArn,
-            accessPointId: accessPoint.accessPointId
+            accessPoint: accessPoint,
         };
     }
 
@@ -172,7 +170,7 @@ export class MinecraftServerStack extends cdk.Stack
                 fileSystemId: fileSystemDetails.fileSystem.fileSystemId,
                 transitEncryption: "ENABLED",
                 authorizationConfig: {
-                    accessPointId: fileSystemDetails.accessPointId
+                    accessPointId: fileSystemDetails.accessPoint.accessPointId
                 }
             }
         });
@@ -234,7 +232,7 @@ export class MinecraftServerStack extends cdk.Stack
             resources: [fileSystemDetails.fileSystem.fileSystemArn],
             conditions: {
                 "StringEquals": {
-                    "elasticfilesystem:AccessPointArn": fileSystemDetails.accessPointArn
+                    "elasticfilesystem:AccessPointArn": fileSystemDetails.accessPoint.accessPointArn
                 }
             }
         }));
@@ -298,7 +296,7 @@ export class MinecraftServerStack extends cdk.Stack
         return role;
     }
 
-    private createFileSync(domainName: string, fileSystemArn: string, subnets: ec2.ISubnet[], securityGroups: ec2.ISecurityGroup[])
+    private createFileSync(domainName: string, fileSystemDetails: FileSystemDetails, subnets: ec2.ISubnet[], securityGroups: ec2.ISecurityGroup[])
     {
         const bucket = new s3.Bucket(this, "MinecraftFileSyncBucket", {
             bucketName: `${domainName}-minecraft-files`,
@@ -344,13 +342,16 @@ export class MinecraftServerStack extends cdk.Stack
         }, this));
 
         const efsLocation = new sync.CfnLocationEFS(this, "MinecraftEfsLocation", {
-            efsFilesystemArn: fileSystemArn,
+            efsFilesystemArn: fileSystemDetails.fileSystem.fileSystemArn,
             ec2Config: {
                 securityGroupArns: securityGroupArns,
                 subnetArn: subnetArn
             },
             subdirectory: accessPointPath
         });
+
+        // Ensure the EFS is completely created before creating the EFS location, to ensure the mount targets exist
+        efsLocation.node.addDependency(fileSystemDetails.fileSystem);
 
         new sync.CfnTask(this, "MinecraftEfsToS3SyncTask", {
             name: "minecraft-efs-to-s3",
