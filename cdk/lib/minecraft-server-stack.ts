@@ -46,7 +46,7 @@ export class MinecraftServerStack extends cdk.Stack
 
         if (props.enableFileSync)
         {
-            this.createFileSync(props, fileSystemDetails, vpc, serviceSecurityGroups);
+            this.createFileSync(props.domainName, fileSystemDetails.fileSystem.fileSystemArn, vpc.publicSubnets, serviceSecurityGroups);
         }
     }
 
@@ -54,7 +54,7 @@ export class MinecraftServerStack extends cdk.Stack
     {
         const fileSystem = new efs.FileSystem(this, 'MinecraftFileSystem', {
             vpc: vpc,
-            // removalPolicy: cdk.RemovalPolicy.DESTROY
+            removalPolicy: cdk.RemovalPolicy.DESTROY
         });
 
         const accessPoint = fileSystem.addAccessPoint("MinecraftAccessPoint", {
@@ -267,30 +267,22 @@ export class MinecraftServerStack extends cdk.Stack
         return service.connections.securityGroups;
     }
 
-    private createFileSync(props: MinecraftServerStackProps, fileSystemDetails: FileSystemDetails, vpc: ec2.IVpc, serviceSecurityGroups: ec2.ISecurityGroup[])
+    private createBucketAccessPolicy(id: string, bucketArn: string, principal: iam.IPrincipal): iam.IRole
     {
-        const bucket = new s3.Bucket(this, "MinecraftFileSyncBucket", {
-            bucketName: `${props.domainName}-minecraft-files`,
-            versioned: true,
-            encryption: s3.BucketEncryption.KMS_MANAGED,
-            // removalPolicy: cdk.RemovalPolicy.DESTROY,
-            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        const role = new iam.Role(this, id, {
+            assumedBy: principal
         });
 
-        const bucketSyncAccessRole = new iam.Role(this, "MinecraftBucketSyncAccessRole", {
-            assumedBy: new iam.ServicePrincipal("datasync.amazonaws.com")
-        });
-
-        bucketSyncAccessRole.addToPolicy(new iam.PolicyStatement({
+        role.addToPolicy(new iam.PolicyStatement({
             actions: [
                 "s3:GetBucketLocation",
                 "s3:ListBucket",
                 "s3:ListBucketMultipartUploads"
             ],
-            resources: [bucket.bucketArn]
+            resources: [bucketArn]
         }));
 
-        bucketSyncAccessRole.addToPolicy(new iam.PolicyStatement({
+        role.addToPolicy(new iam.PolicyStatement({
             actions: [
                 "s3:AbortMultipartUpload",
                 "s3:DeleteObject",
@@ -300,8 +292,27 @@ export class MinecraftServerStack extends cdk.Stack
                 "s3:GetObjectTagging",
                 "s3:PutObject"
             ],
-            resources: [`${bucket.bucketArn}/*`]
+            resources: [`${bucketArn}/*`]
         }));
+
+        return role;
+    }
+
+    private createFileSync(domainName: string, fileSystemArn: string, subnets: ec2.ISubnet[], securityGroups: ec2.ISecurityGroup[])
+    {
+        const bucket = new s3.Bucket(this, "MinecraftFileSyncBucket", {
+            bucketName: `${domainName}-minecraft-files`,
+            versioned: true,
+            encryption: s3.BucketEncryption.KMS_MANAGED,
+            removalPolicy: cdk.RemovalPolicy.DESTROY,
+            blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
+        });
+
+        const bucketSyncAccessRole = this.createBucketAccessPolicy(
+            "MinecraftBucketSyncAccessRole",
+            bucket.bucketArn,
+            new iam.ServicePrincipal("datasync.amazonaws.com")
+        );
 
         const bucketLocation = new sync.CfnLocationS3(this, "MinecraftS3Location", {
             s3BucketArn: bucket.bucketArn,
@@ -312,7 +323,10 @@ export class MinecraftServerStack extends cdk.Stack
             }
         });
 
-        if (vpc.publicSubnets.length < 1)
+        // Ensure the role is completely created before creating the S3 location, as it requires the s3:ListBucket permission to validate the resource
+        bucketLocation.node.addDependency(bucketSyncAccessRole);
+
+        if (subnets.length < 1)
         {
             throw new Error("VPC needs at least one public subnet to create the data sync tasks.");
         }
@@ -320,17 +334,17 @@ export class MinecraftServerStack extends cdk.Stack
         const subnetArn = cdk.Arn.format({
             service: "ec2",
             resource: "subnet",
-            resourceName: vpc.publicSubnets[0].subnetId
+            resourceName: subnets[0].subnetId
         }, this);
 
-        const securityGroupArns = serviceSecurityGroups.map(group => cdk.Arn.format({
+        const securityGroupArns = securityGroups.map(group => cdk.Arn.format({
             service: "ec2",
             resource: "security-group",
             resourceName: group.securityGroupId
         }, this));
 
         const efsLocation = new sync.CfnLocationEFS(this, "MinecraftEfsLocation", {
-            efsFilesystemArn: fileSystemDetails.fileSystem.fileSystemArn,
+            efsFilesystemArn: fileSystemArn,
             ec2Config: {
                 securityGroupArns: securityGroupArns,
                 subnetArn: subnetArn
