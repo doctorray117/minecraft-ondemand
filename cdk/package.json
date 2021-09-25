@@ -9,6 +9,7 @@
         "build": "tsc",
         "watch": "tsc -w",
         "cdk": "cdk",
+        "diff": "cdk diff --profile minecraft",
         "synth": "cdk synth --profile minecraft",
         "deploy": "cdk deploy --all --require-approval never --profile minecraft",
         "destroy": "cdk destroy --all --profile minecraft"
