@@ -153,12 +153,24 @@ export class MinecraftServerStack extends cdk.Stack
             essential: false
         });
 
+        const fargateSpotWeight = props.fargateSpotPercentage ?? 0;
+
         const service = new ecs.FargateService(this, "MinecraftService", {
             cluster: cluster,
             desiredCount: 0,
             taskDefinition: taskDefinition,
             assignPublicIp: true,
-            serviceName: props.serviceName
+            serviceName: props.serviceName,
+            capacityProviderStrategies: [
+                {
+                    capacityProvider: 'FARGATE_SPOT',
+                    weight: fargateSpotWeight,
+                },
+                {
+                    capacityProvider: 'FARGATE',
+                    weight: 100 - fargateSpotWeight,
+                },
+            ],
         });
 
         const dataVolumeName = "MinecraftDataVolume";
@@ -243,24 +255,6 @@ export class MinecraftServerStack extends cdk.Stack
 
         // Add an inbound rule on the service security group to allow connections to the server
         service.connections.allowFromAnyIpv4(ec2.Port.tcp(minecraftPort), "Minecraft server listen port for client connections");
-
-        // Escape hatch to set launch type to FARGATE_SPOT for cheaper run costs
-        if (props.fargateSpotPercentage && props.fargateSpotPercentage > 0 && props.fargateSpotPercentage <= 100)
-        {
-            const cfnService = service.node.tryFindChild('Service') as ecs.CfnService;
-
-            cfnService.launchType = undefined;
-            cfnService.capacityProviderStrategy = [
-                {
-                    capacityProvider: 'FARGATE_SPOT',
-                    weight: props.fargateSpotPercentage,
-                },
-                {
-                    capacityProvider: 'FARGATE',
-                    weight: 100 - props.fargateSpotPercentage,
-                },
-            ];
-        }
 
         return service.connections.securityGroups;
     }
