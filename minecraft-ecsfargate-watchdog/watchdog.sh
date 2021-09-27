@@ -28,8 +28,8 @@ function send_notification ()
 function zero_service ()
 {
   send_notification shutdown
-  echo Setting desired task count to zero & updating ip
-  cat << EOF >> minecraft-dns.json
+  echo Setting desired task count to zero \& updating ip
+  cat << EOF > minecraft-dns.json
 {
   "Comment": "Fargate Public IP change for Minecraft Server",
   "Changes": [
