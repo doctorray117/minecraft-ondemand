@@ -53,6 +53,10 @@ npm run build && npm run deploy
 
 ## Configuration
 
+Configuration values can all be passed in as environment variables or by using a 
+`.env` file created from [`.env.sample`](./.env.sample). Environment variables will
+take precedence over configuration values set in `.env`.
+
 | Config                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Default              |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | DOMAIN_NAME                   | **Required** Domain name of existing Route53 Hosted Zone.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | --                   |
