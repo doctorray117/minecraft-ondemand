@@ -22,7 +22,13 @@ Clone the `minecraft-ondemand` GitHub repository.
 git clone https://github.com/doctorray117/minecraft-ondemand.git
 ```
 
-### 2. Set the required configuration values
+### 2. Change to the CDK directory
+
+```bash
+cd cdk/
+```
+
+### 3. Set the required configuration values
 
 Copy `.env.sample` at the root of this repo and save it as `.env`:
 
@@ -37,7 +43,7 @@ subdomain (defaults to `minecraft`).
 
 See the section on [Configuration](#configuration) for more configuration options.
 
-### 3. Build and Deploy
+### 4. Build and Deploy
 
 Build and deploy the solution by running:
 
