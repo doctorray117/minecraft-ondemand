@@ -10,7 +10,7 @@
 - AWS CLI installed and configured
 - Domain name with public DNS served from Route 53
 
-**Note: Installing CDK is not required and is included in the node dependencies.**
+**Note:** Installing CDK globally is not required.
 
 ## Usage
 
@@ -54,8 +54,11 @@ npm run build && npm run deploy
 ## Configuration
 
 Configuration values can all be passed in as environment variables or by using a 
-`.env` file created from [`.env.sample`](./.env.sample). Environment variables will
-take precedence over configuration values set in `.env`.
+`.env` file created from [`.env.sample`](./.env.sample). 
+
+
+**Note:** Environment variables will take precedence over configuration values
+set in `.env`.
 
 | Config                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Default              |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
