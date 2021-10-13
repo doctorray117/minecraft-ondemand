@@ -300,6 +300,7 @@ Under `Advanced container configuration` make these changes:
   - UNCHECK `Essential` (the watchdog container handles shutdowns)
   - Environment Variables.  One gotcha,  you have to select "Value" from the drop down list when defining these.
     - `EULA` : `TRUE`
+    - `MEMORY` : `2G`
     - Any additional stuff you want from [Minecraft Java Docker Server Docs] or [Minecraft Bedrock Docker Server Docs]
 - Storage and Logging
   - Mount Points
