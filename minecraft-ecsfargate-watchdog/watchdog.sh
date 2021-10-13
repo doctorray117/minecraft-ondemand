@@ -5,6 +5,7 @@
 [ -n "$CLUSTER" ] || { echo "CLUSTER env variable must be set to the name of the ECS cluster" ; exit 1; }
 [ -n "$SERVICE" ] || { echo "SERVICE env variable must be set to the name of the service in the $CLUSTER cluster" ; exit 1; }
 [ -n "$SERVERNAME" ] || { echo "SERVERNAME env variable must be set to the full A record in Route53 we are updating" ; exit 1; }
+[ -n "$MONITORNAME" ] || { echo "MONITORNAME env variable must be set to the full A record in Route53 we are updating" ; exit 1; }
 [ -n "$DNSZONE" ] || { echo "DNSZONE env variable must be set to the Route53 Hosted Zone ID" ; exit 1; }
 [ -n "$STARTUPMIN" ] || { echo "STARTUPMIN env variable not set, defaulting to a 10 minute startup wait" ; STARTUPMIN=10; }
 [ -n "$SHUTDOWNMIN" ] || { echo "SHUTDOWNMIN env variable not set, defaulting to a 20 minute shutdown wait" ; SHUTDOWNMIN=20; }
@@ -54,7 +55,7 @@ PUBLICIP=$(aws ec2 describe-network-interfaces --network-interface-ids $ENI --qu
 echo "I believe our public IP address is $PUBLICIP"
 
 ## update public dns record
-echo "Updating DNS record for $SERVERNAME to $PUBLICIP"
+echo "Updating DNS record for $SERVERNAME and $MONITORNAME to $PUBLICIP"
 ## prepare json file
 cat << EOF >> minecraft-dns.json
 {
@@ -64,6 +65,18 @@ cat << EOF >> minecraft-dns.json
       "Action": "UPSERT",
       "ResourceRecordSet": {
         "Name": "$SERVERNAME",
+        "Type": "A",
+        "TTL": 30,
+        "ResourceRecords": [
+          {
+            "Value": "$PUBLICIP"
+          }
+        ]
+      },
+      {
+      "Action": "UPSERT",
+      "ResourceRecordSet": {
+        "Name": "$MONITORNAME",
         "Type": "A",
         "TTL": 30,
         "ResourceRecords": [
