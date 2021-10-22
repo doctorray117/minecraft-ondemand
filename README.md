@@ -32,7 +32,7 @@ The process works as follows:
 - tl;dr;tl;dt : $1.50 / month for 20 hours of play.
 
 # Installation and Setup
-A Cloud Deployment Kit (CDK) implementation is in progress.  What follows is a manual walkthrough.
+For a quick start, a Cloud Deployment Kit (CDK) implementation is available!  Click on the `cdk` folder in the source for the instructions.  The documentation will be refined soon to expand on this to help novice users.  What follows is a manual walkthrough that anyone should be able to complete.
 
 ## Checklist of things to keep track of
 To simplify the procedure, your ECS cluster name, service name, and sns topic name need to be defined before you start.  This is because we will be referencing them before they are created.  In the documentation I use these:
