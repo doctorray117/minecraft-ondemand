@@ -9,6 +9,7 @@
 - AWS Account
 - AWS CLI installed and configured
 - Domain name with public DNS served from Route 53
+- an EC2 Key pair (optional)
 
 **Note:** Installing CDK globally is not required.
 
@@ -97,6 +98,55 @@ Alternatively, you can delete the `minecraft-server-stack` first, then the
 `minecraft-domain-stack` from the [AWS Console](https://console.aws.amazon.com/cloudformation/).
 
 ## Advanced Usage
+### EFS Maintenance
+1. Log into your AWS console's EC2 section for your chosen region.
+2. From the top right corner choose to launch an instance from a launch template ![Launch Instance](../docs/screenshots/efs1_launch_instance.png)
+   1. If you have more than one version, pick the highest revision.
+3. Select the launch template created by your stack ![Select Template](../docs/screenshots/efs2_select_a_template.png)
+4. Select the most recent x86 AMI ![Select AMI](../docs/screenshots/efs3_select_ami.png)
+5. Select the cheapest instance type ![Instance Type](../docs/screenshots/efs4_select_instance_type.png)
+6. Select your key pair to log in.
+7. Select one of the public subnets created by your stack ![Network](../docs/screenshots/efs5_network.png)
+8. Change anything else you want (though the defaults should _just work_) and launch the instance ![Launched](../docs/screenshots/efs6_launched.png)
+9. Click the instance id to go to the lust of instances again and wait for your instance to show as running.
+10. Once running clik the instance id to get the details of its external IP address ![IP](../docs/screenshots/efs7_ip.png)
+11. Use ssh with your local key file to log in
+```
+ssh -i /path/to/key-file.pem  ec2-user@YOUR_INSTANCE_IP
+```
+12. The FS should mount under `/mnt/efs/fs1/minecraft` after a minute or two ![Logged In](../docs/screenshots/efs8_logged_in.png)
+13. When you are done shut down the instance to terminate it
+```
+sudo shutdown now
+```
+
+**Example Commands**
+1. Back-up world to a local machine
+```
+# On ec2 instance
+cd /mnt/efs/fs1/minecraft/
+tar cjvf world.tar.bz2 world
+# on local machine
+scp -i /path/to/key-file.pem  ec2-user@YOUR_INSTANCE_IP:/mnt/efs/fs1/minecraft/world.tar.bz2 .
+```
+2. Upload a world from a local machine
+```
+# on local machine
+scp -i /path/to/key-file.pem world.tar.bz2 ec2-user@YOUR_INSTANCE_IP:/mnt/efs/fs1/minecraft/
+# On ec2 instance
+cd /mnt/efs/fs1/minecraft/
+rm -rf world
+tar xjvf world.tar.bz2
+```
+3. Remove everything but the world and backups (useful for modded server version changes).
+```
+# On ec2 instance
+cd /mnt/efs/fs1/minecraft/
+shopt -s extglob
+rm -rfv !("backups"|"world")
+rm .ftb-installed
+shopt -u extglob
+```
 
 ## FAQ
 
