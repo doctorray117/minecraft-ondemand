@@ -112,7 +112,7 @@ export class MinecraftStack extends Stack {
     );
 
     const minecraftServerConfig = getMinecraftServerConfig(
-      config.minecraftEdition
+      config.minecraftEdition, config.minecraftImageTag
     );
 
     const minecraftServerContainer = new ecs.ContainerDefinition(

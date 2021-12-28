@@ -16,18 +16,33 @@ export const isDockerInstalled = (): boolean => {
   }
 };
 
+function imageFromTag(base:string, tag:string) {
+  if (tag && tag.length > 0) {
+    if (base.includes(':')) {
+      return base.substring(0, base.indexOf(':')) + ':' + tag
+    } else {
+      return base + ':' + tag;
+    }
+  } else {
+    return base;
+  }
+}
+
 export const getMinecraftServerConfig = (
-  edition: StackConfig['minecraftEdition']
+  edition: StackConfig['minecraftEdition'],
+  imageTag: StackConfig['minecraftImageTag']
 ): MinecraftEditionConfig => {
+  const javaEditionImage = imageFromTag(constants.JAVA_EDITION_DOCKER_IMAGE, imageTag)
+  const bedrockEditionImage = imageFromTag(constants.BEDROCK_EDITION_DOCKER_IMAGE, imageTag)
   const javaConfig = {
-    image: constants.JAVA_EDITION_DOCKER_IMAGE,
+    image: javaEditionImage,
     port: 25565,
     protocol: Protocol.TCP,
     ingressRulePort: Port.tcp(25565),
   };
 
   const bedrockConfig = {
-    image: constants.BEDROCK_EDITION_DOCKER_IMAGE,
+    image: bedrockEditionImage,
     port: 19132,
     protocol: Protocol.UDP,
     ingressRulePort: Port.udp(19132),
