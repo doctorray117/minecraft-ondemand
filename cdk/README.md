@@ -3,6 +3,11 @@
 > Quick and easy deployment of an on-demand Minecraft server with configurable
 > settings using [AWS CDK](https://aws.amazon.com/cdk/).
 
+#### To Do:
+- Clean up docs more
+- Link back to how to upload/download game data for configuration changes
+- add some images?
+
 # Introduction
 
 Cloud Development Kit (CDK) is a relatively easy way to deploy infrastructure as code.  Within the context of this project, this is a CDK implementation of almonst all of the required items to bring up and operate this project with some customizations.  This guide is built for beginners and is tailored toward a Windows experience.  Advanced or Linux users can gloss over the stuff that doesn't apply to them.
@@ -41,9 +46,9 @@ notepad .env
 
 ### 3. Set the required configuration values
 
-Copy `.env.sample` at the root of this repo and save it as `.env`:
-
 The only **required** configuration value is `DOMAIN_NAME`.  This value should be the exact domain name you purchased and set up in Route53.  During setup, a dedicated subdomain zone will be added and an NS record will be added to this root zone.
+
+Setting an email address for an SNS topic is recommended.
 
 See the section on [Configuration](#configuration) for more configuration options.
 
@@ -57,11 +62,12 @@ Build and deploy the solution by running:
 npm run build && npm run deploy
 ```
 
-## Configuration
+You may be asked to install a package like aws-cdk, this is fine to say yes to.  The full deployment will take a few minutes.
+
+## Additional Configuration
 
 Configuration values can all be passed in as environment variables or by using a 
 `.env` file created from [`.env.sample`](./.env.sample). 
-
 
 **Note:** Environment variables will take precedence over configuration values
 set in `.env`.
@@ -100,6 +106,8 @@ data**.
 
 Alternatively, you can delete the `minecraft-server-stack` first, then the
 `minecraft-domain-stack` from the [AWS Console](https://console.aws.amazon.com/cloudformation/).
+
+Note: the Route53 A record will need to be manually reset to 192.168.1.1 in order for CDK to properly destroy the resources.  This will be fixed later.
 
 ## Advanced Usage
 
