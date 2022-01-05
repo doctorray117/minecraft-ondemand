@@ -14,7 +14,7 @@ Cloud Development Kit (CDK) is a relatively easy way to deploy infrastructure as
 1. [Open an AWS Account]
 2. [Create an Admin IAM User] (Download and save the Access Key and Secret Key).  Alternatively you can generate Access Keys for your root user, but this is bad practice.
 3. [Install AWS CLI] and [configure it] with the keys from step 2.  Specifying the default region and output format are optional.
-4. [Pick](https://domains.google) [a](https://namecheap.com) [registrar](https://networksolutions.com) [and](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html) [register](https://domain.com) [a](https://register.com) [domain](https://godaddy.com) [name](enom.com).
+4. [Pick](https://domains.google) [a](https://namecheap.com) [registrar](https://networksolutions.com) [and](https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/domain-register.html) [register](https://domain.com) [a](https://register.com) [domain](https://godaddy.com) [name](https://enom.com).
 5. [Create a public hosted zone] for your domain name in Route 53.
 6. [Change the DNS servers] for your new domain to the ones listed in the Route 53 console from step 5.
 7. Install [NodeJS] (say yes to the chocolatey option)
