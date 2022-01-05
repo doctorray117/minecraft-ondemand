@@ -129,11 +129,11 @@ Check the [Hosted Zones](https://console.aws.amazon.com/route53/v2/hostedzones#)
 tab in the AWS Console and make sure the configuration value set for `DOMAIN_NAME`
 matches the domain name found in the console.
 
-  [Open an AWS Account] : <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>
-  [Install AWS CLI] : <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
-  [Create an Admin IAM User] : <https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html>
-  [configure it] : <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html>
-  [Create a public hosted zone] : <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html>
-  [Change the DNS servers] : <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-inactive.html#migrate-dns-update-domain-inactive>
-  [NodeJS] : <https://nodejs.org/en/download/>
-  [Git] : <https://git-scm.com/download/win>
+  [Open an AWS Account]: <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>
+  [Install AWS CLI]: <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
+  [Create an Admin IAM User]: <https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html>
+  [configure it]: <https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html>
+  [Create a public hosted zone]: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/CreatingHostedZone.html>
+  [Change the DNS servers]: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-inactive.html#migrate-dns-update-domain-inactive>
+  [NodeJS]: <https://nodejs.org/en/download/>
+  [Git]: <https://git-scm.com/download/win>
