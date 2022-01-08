@@ -17,7 +17,12 @@ function send_notification ()
   ## Twilio Option
   [ -n "$TWILIOFROM" ] && [ -n "$TWILIOTO" ] && [ -n "$TWILIOAID" ] && [ -n "$TWILIOAUTH" ] && \
   echo "Twilio information set, sending $1 message" && \
-  curl --silent -XPOST -d "Body=$MESSAGETEXT" -d "From=$TWILIOFROM" -d "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" -u "$TWILIOAID:$TWILIOAUTH"
+  curl --silent --request POST --data "Body=$MESSAGETEXT" --data "From=$TWILIOFROM" --data "To=$TWILIOTO" "https://api.twilio.com/2010-04-01/Accounts/$TWILIOAID/Messages" --user "$TWILIOAID:$TWILIOAUTH"
+
+  ## Telnyx Option
+  [ -n "$TELNYXFROM" } && [ -n "$TELNYXTO" ] && [ -n "$TELNYXAPI" ] && \
+  echo "Telnyx information set, sending $1 message" && \
+  curl --silent --request POST --header "Content-Type: application/json" --header "Authorization: Bearer $TELNYXAPI" --data "{\"from\":\"$TELNYXFROM\",\"to\":\"$TELNYXTO\",\"text\":\"$MESSAGETEXT\"}" https://api.telnyx.com/v2/messages
 
   ## SNS Option
   [ -n "$SNSTOPIC" ] && \
