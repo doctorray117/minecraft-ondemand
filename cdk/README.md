@@ -120,6 +120,27 @@ Set the `DEBUG` value in your [configuration](#configuration) to `true` to enabl
 - CloudWatch Logs for the `minecraft-server` ECS Container
 - CloudWatch Logs for the `minecraft-ecsfargate-watchdog` ECS Container
 
+### No Fargate configuration exists for given values
+
+There are limited memory and vCPU configurations which are support by Fargate, in your `.env` ensure that you're using values supported here:
+
+| CPU (TASK_CPU) | Memory (TASK_MEMORY)            |
+|----------------|---------------------------------|
+| 256            | 512, 1024, 2048                 |
+| 512            | 1024 - 4096 in 1024 increments  |
+| 1024           | 2048 - 8192 in 1024 increments  |
+| 2048           | 4096 - 16384 in 1024 increments |
+| 4096           | 8192 - 30720 in 1024 increments |
+
+`1024` is equal to one vCPU or GB. For example, if I wanted 2 virtual cores and 8GB memory, this would be my `.env` configuration:
+
+```
+TASK_MEMORY                   = 8192
+TASK_CPU                      = 2048
+```
+
+See [Invalid CPU or memory value specified](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html) for more details
+
 ### The specified hosted zone does not exist
 
 **Error Message:**
