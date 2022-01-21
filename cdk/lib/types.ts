@@ -145,6 +145,14 @@ export interface StackConfig {
    * - CloudWatch Logs for the `minecraft-ecsfargate-watchdog` ECS Container
    */
   debug: boolean;
+  /**
+   * The tag of the docker image to use for the 
+   * [Minecraft Docker Server](https://github.com/itzg/docker-minecraft-server/blob/master/README.md)
+   * [Minecraft Bedrock Docker](https://github.com/itzg/docker-minecraft-bedrock-server/blob/master/README.md)
+   *
+   * @default ''
+   */
+   minecraftImageTag: string;
 }
 
 export interface MinecraftEditionConfig {
