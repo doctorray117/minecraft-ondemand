@@ -162,7 +162,7 @@ Most CDK destroy failures can be resolved by running it a second time.  Other re
 - Is your task still running?
 - Any manual changes in the console may require manual deletion or changeback for destroy to work properly
 
-  [AWS CDK] <https://aws.amazon.com/cdk/>
+  [AWS CDK]: <https://aws.amazon.com/cdk/>
   [Open an AWS Account]: <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>
   [Install AWS CLI]: <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
   [Create an Admin IAM User]: <https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html>
