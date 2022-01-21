@@ -1,18 +1,14 @@
 # minecraft-ondemand: AWS Cloud Development Kit (CDK)
 
 > Quick and easy deployment of an on-demand Minecraft server with configurable
-> settings using [AWS CDK](https://aws.amazon.com/cdk/).
-
-#### To Do:
-- Clean up docs more
-- Link back to how to upload/download game data for configuration changes
-- add some images?
+> settings using [AWS CDK].
 
 # Introduction
 
 Cloud Development Kit (CDK) is a relatively easy way to deploy infrastructure as code.  Within the context of this project, this is a CDK implementation of almonst all of the required items to bring up and operate this project with some customizations.  This guide is built for beginners and is tailored toward a Windows experience.  Advanced or Linux users can gloss over the stuff that doesn't apply to them.
 
 # Quickest Start (Windows)
+Linux friends should be able to adapt this to their needs.
 
 ## Prerequisites
 
@@ -64,6 +60,10 @@ npm run build && npm run deploy
 
 You may be asked to install a package like aws-cdk, this is fine to say yes to.  The full deployment will take a few minutes.
 
+### 5. Customize your server
+
+After you've launched your minecraft server the first time and you've waited for it to finishing generating the world with all defaults, you'll need to get in, make yourself an op, tweak settings, etc.  There are several ways to do this, many of which are outlined at [Usage and Customization] on the main page.
+
 ## Additional Configuration
 
 Configuration values can all be passed in as environment variables or by using a 
@@ -108,10 +108,6 @@ Alternatively, you can delete the `minecraft-server-stack` first, then the
 `minecraft-domain-stack` from the [AWS Console](https://console.aws.amazon.com/cloudformation/).
 
 Note: the Route53 A record will need to be manually reset to 192.168.1.1 in order for CDK to properly destroy the resources.  This will be fixed later.
-
-## Advanced Usage
-
-## FAQ
 
 ## Troubleshooting
 
@@ -158,6 +154,15 @@ Check the [Hosted Zones](https://console.aws.amazon.com/route53/v2/hostedzones#)
 tab in the AWS Console and make sure the configuration value set for `DOMAIN_NAME`
 matches the domain name found in the console.
 
+### cdk destroy fails
+
+Most CDK destroy failures can be resolved by running it a second time.  Other reasons may include:
+
+- Did you reset the Route53 A record back to 192.168.1.1?  This is a temporary problem but currently required.
+- Is your task still running?
+- Any manual changes in the console may require manual deletion or changeback for destroy to work properly
+
+  [AWS CDK] <https://aws.amazon.com/cdk/>
   [Open an AWS Account]: <https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/>
   [Install AWS CLI]: <https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html>
   [Create an Admin IAM User]: <https://docs.aws.amazon.com/IAM/latest/UserGuide/getting-started_create-admin-group.html>
@@ -166,3 +171,4 @@ matches the domain name found in the console.
   [Change the DNS servers]: <https://docs.aws.amazon.com/Route53/latest/DeveloperGuide/migrate-dns-domain-inactive.html#migrate-dns-update-domain-inactive>
   [NodeJS]: <https://nodejs.org/en/download/>
   [Git]: <https://git-scm.com/download/win>
+  [Usage and Customization]: <https://github.com/doctorray117/minecraft-ondemand#usage-and-customization>
