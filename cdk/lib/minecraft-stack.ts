@@ -17,6 +17,7 @@ import { constants } from './constants';
 import { SSMParameterReader } from './ssm-parameter-reader';
 import { StackConfig } from './types';
 import { getMinecraftServerConfig, isDockerInstalled } from './util';
+import { UserData } from 'aws-cdk-lib/lib/aws-ec2';
 
 interface MinecraftStackProps extends StackProps {
   config: Readonly<StackConfig>;
@@ -322,5 +323,56 @@ export class MinecraftStack extends Stack {
       ],
     });
     iamRoute53Policy.attachToRole(ecsTaskRole);
+
+    const efsMaintenanceInstanceRole = new iam.Role(this, 'EFSMaintenanceRole', {
+      assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+      description: 'Minecraft EC2 instance role',
+    });
+    efsReadWriteDataPolicy.attachToRole(efsMaintenanceInstanceRole);
+
+    const efsMaintenanceSecurityGroup = new ec2.SecurityGroup(
+      this,
+      'EfsMaintenanceSecurityGroup',
+      {
+        vpc,
+        description: 'Security group for Minecraft on-demand EFS Maintenance Instances',
+      }
+    );
+
+    efsMaintenanceSecurityGroup.addIngressRule(
+      ec2.Peer.anyIpv4(),
+      ec2.Port.tcp(22)
+    );
+
+    /* Allow access to EFS from Fargate service security group */
+    fileSystem.connections.allowDefaultPortFrom(
+      efsMaintenanceSecurityGroup
+    );
+
+    const efsMaintenanceLaunchTemplate = new ec2.LaunchTemplate(this, 'EFSMaintenanceLaunchTemplate', {
+      userData: UserData.custom(`#cloud-config
+package_update: true
+package_upgrade: true
+runcmd:
+- yum install -y amazon-efs-utils
+- apt-get -y install amazon-efs-utils
+- yum install -y nfs-utils
+- apt-get -y install nfs-common
+- file_system_id_1=${fileSystem.fileSystemId}
+- efs_mount_point_1=/mnt/efs/fs1
+- mkdir -p "\${efs_mount_point_1}"
+- test -f "/sbin/mount.efs" && printf "\\n\${file_system_id_1}:/ \${efs_mount_point_1} efs iam,tls,_netdev\\n" >> /etc/fstab || printf "\\n\${file_system_id_1}.efs.${config.serverRegion}.amazonaws.com:/ \${efs_mount_point_1} nfs4 nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2,noresvport,_netdev 0 0\\n" >> /etc/fstab
+- test -f "/sbin/mount.efs" && grep -ozP 'client-info]\\nsource' '/etc/amazon/efs/efs-utils.conf'; if [[ $? == 1 ]]; then printf "\\n[client-info]\\nsource=liw\\n" >> /etc/amazon/efs/efs-utils.conf; fi;
+- retryCnt=15; waitTime=30; while true; do mount -a -t efs,nfs4 defaults; if [ $? = 0 ] || [ $retryCnt -lt 1 ]; then echo File system mounted successfully; break; fi; echo File system not available, retrying to mount.; ((retryCnt--)); sleep $waitTime; done;
+`),
+      role: efsMaintenanceInstanceRole,
+      spotOptions: {
+        interruptionBehavior: ec2.SpotInstanceInterruption.TERMINATE,
+        requestType: ec2.SpotRequestType.ONE_TIME
+      },
+      securityGroup: efsMaintenanceSecurityGroup,
+      instanceInitiatedShutdownBehavior: ec2.InstanceInitiatedShutdownBehavior.TERMINATE
+    });
+
   }
 }
