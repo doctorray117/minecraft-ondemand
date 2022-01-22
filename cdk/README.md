@@ -159,7 +159,7 @@ matches the domain name found in the console.
 
 Most CDK destroy failures can be resolved by running it a second time.  Other reasons may include:
 
-- Did you reset the Route53 A record back to 192.168.1.1?  This is a temporary problem but currently required.
+- Did you reset the Route53 A record back to 192.168.1.1?  This is a temporary problem but currently required.  If you attempted destroy before doing this then just delete the record and run destroy again.
 - Is your task still running?
 - Any manual changes in the console may require manual deletion or changeback for destroy to work properly
 
