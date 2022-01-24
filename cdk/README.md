@@ -39,6 +39,7 @@ cd cdk
 copy .env.sample .env
 notepad .env
 ```
+(replace `notepad` with your favorite text editor)
 
 ### 3. Set the required configuration values
 
@@ -50,7 +51,7 @@ See the section on [Configuration](#configuration) for more configuration option
 
 ### 4. Build and Deploy
 
-All of the subsequent steps assume you are running from the node.js command prompt window inside of the cdk directory.
+All of the subsequent steps assume you are running from a terminal/command prompt window inside of the cdk directory.  Windows users might use the `Node.js command prompt` item in the start menu.
 
 Build and deploy the solution by running:
 
