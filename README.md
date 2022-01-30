@@ -4,6 +4,7 @@ Almost free serverless on-demand Minecraft server in AWS
 
 ## Table of Contents
 
+- [Quick Start](#quick-start)
 - [Background](#background)
 - [Workflow](#workflow)
 - [Diagram](#diagram)
@@ -25,6 +26,9 @@ Almost free serverless on-demand Minecraft server in AWS
   - [Option 2: DataSync and S3](#option-2-datasync-and-s3)
 - [Testing and Troubleshooting](#testing-and-troubleshooting)
 - [Other Stuff](#other-stuff)
+
+## Quick Start
+Too much text for you?  Click the `cdk` folder in the source above for a fast and relatively-automated walkthrough.
 
 ## Background
 
