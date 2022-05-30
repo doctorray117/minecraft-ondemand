@@ -540,6 +540,7 @@ Click `Next`. For `Task Name` consider something like `minecraft-s3-to-efs`. For
   - Transfer mode : Transfer only data that has changed
   - Keep deleted files / Overwrite files : Keep enabled as default
   - Excludes : None necessary this time around
+  - Advanced : UNCHECK "Copy Ownership" and "Copy Permissions" -- otherwise it will change/lose them under certain circumstances and you won't be able to play after changes
 - Schedule : not scheduled, we'll run it on demand
 - Task logging
   - Log level : Do not send logs to CloudWatch
