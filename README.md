@@ -468,7 +468,7 @@ To use your new server, open Minecraft Multiplayer, add your new server, and joi
 
 ## Option 1: ECS Exec
 
-This option is technically the easiest as it doesn't require any additional software installed, but it does require the use of the Linux command line, and must be done while the containers are running.  It involves leveraging Amazon's [ECS Exec](#ecs exec) feature to open an interactive shell in your running ECS Fargate task, which can be done with the [CloudShell](#cloudshell) interface on the AWS Console.
+This option is technically the easiest as it doesn't require any additional software installed, but it does require the use of the Linux command line, and must be done while the containers are running.  It involves leveraging Amazon's [ECS Exec] feature to open an interactive shell in your running ECS Fargate task, which can be done with the [CloudShell] interface on the AWS Console.
 
 ### One Time Setup
 
