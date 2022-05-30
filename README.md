@@ -501,11 +501,15 @@ Click `Next`. For `Task Name` consider something like `minecraft-efs-to-s3`. For
 
 - Task execution configuration : Use all defaults
 - Data transfer configuration
-  - Data to scan : Specific files and folders
+  - Data to scan : Specific files and folders (Or pick the entire location if you don't want to specify each file below)
   - Transfer mode : Transfer only data that has changed
   - Keep deleted files / Overwrite files : Keep enabled as default
   - Includes for Java edition: add three:
-    - `*.json` (this will include `banned-ips`, `banned-players`, `ops`, `usercache`, `whitelist`)
+    - `banned-ips.json`
+    - `banned-players.json`
+    - `ops.json`
+    - `usercache.json`
+    - `whitelist.json`
     - `server.properties`
     - `server-icon.png`
   - Includes for Bedrock edition:
