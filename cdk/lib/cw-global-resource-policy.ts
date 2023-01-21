@@ -1,5 +1,5 @@
 import { custom_resources as cr, aws_iam as iam, Duration } from 'aws-cdk-lib';
-import { RetentionDays } from 'aws-cdk-lib/lib/aws-logs';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { Construct } from 'constructs';
 
 interface CWGlobalResourcePolicyProps {
