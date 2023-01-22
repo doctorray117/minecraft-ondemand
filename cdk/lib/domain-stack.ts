@@ -137,10 +137,17 @@ export class DomainStack extends Stack {
     /**
      * Create our log subscription filter to catch any log events containing
      * our subdomain name and send them to our launcher lambda.
+     *
+     * Java supports SRV records so we can create a more precise filter
+     * unfortunately Minecraft Bedrock does not support this yet.
      */
+    const dnsFilterPattern = config.minecraftEdition === "java"
+    ? `_minecraft._tcp.${config.subdomainPart}.${config.domainName}`
+    : subdomain;
+
     queryLogGroup.addSubscriptionFilter('SubscriptionFilter', {
       destination: new logDestinations.LambdaDestination(launcherLambda),
-      filterPattern: logs.FilterPattern.anyTerm(subdomain),
+      filterPattern: logs.FilterPattern.anyTerm(dnsFilterPattern),
     });
 
     /**
