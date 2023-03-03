@@ -134,7 +134,7 @@ CONNECTED=0
 while [ $CONNECTED -lt 1 ]
 do
   echo Waiting for connection, minute $COUNTER out of $STARTUPMIN...
-  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :19132 | grep ESTABLISHED | wc -l)
+  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
   [[ "$EDITION" == "bedrock" || "$GEYSER" == true ]] && CONNECTIONS_BEDROCK=$( (echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
   [ -n "$CONNECTIONS_JAVA" ] || CONNECTIONS_JAVA=0
   [ -n "$CONNECTIONS_BEDROCK" ] || CONNECTIONS_BEDROCK=0
@@ -157,7 +157,7 @@ echo "We believe a connection has been made, switching to shutdown watcher."
 COUNTER=0
 while [ $COUNTER -le $SHUTDOWNMIN ]
 do
-  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :19132 | grep ESTABLISHED | wc -l)
+  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
   [[ "$EDITION" == "bedrock" || "$GEYSER" == true ]] && CONNECTIONS_BEDROCK=$( (echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
   [ -n "$CONNECTIONS_JAVA" ] || CONNECTIONS_JAVA=0
   [ -n "$CONNECTIONS_BEDROCK" ] || CONNECTIONS_BEDROCK=0
