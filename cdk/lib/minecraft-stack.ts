@@ -17,6 +17,8 @@ import { constants } from './constants';
 import { SSMParameterReader } from './ssm-parameter-reader';
 import { StackConfig } from './types';
 import { getMinecraftServerConfig, isDockerInstalled } from './util';
+import { AssetImage } from 'aws-cdk-lib/aws-ecs';
+import { Platform } from 'aws-cdk-lib/aws-ecr-assets';
 
 interface MinecraftStackProps extends StackProps {
   config: Readonly<StackConfig>;
@@ -225,7 +227,10 @@ export class MinecraftStack extends Stack {
         containerName: constants.WATCHDOG_SERVER_CONTAINER_NAME,
         image: isDockerInstalled()
           ? ecs.ContainerImage.fromAsset(
-              path.resolve(__dirname, '../../minecraft-ecsfargate-watchdog/')
+              path.resolve(__dirname, '../../minecraft-ecsfargate-watchdog/'),
+              {
+                platform: Platform.LINUX_AMD64,
+              }
             )
           : ecs.ContainerImage.fromRegistry(
               'doctorray/minecraft-ecsfargate-watchdog'

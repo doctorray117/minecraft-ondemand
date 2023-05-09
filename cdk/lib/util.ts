@@ -1,5 +1,5 @@
-import { Port } from 'aws-cdk-lib/lib/aws-ec2';
-import { Protocol } from 'aws-cdk-lib/lib/aws-ecs';
+import { Port } from 'aws-cdk-lib/aws-ec2';
+import { Protocol } from 'aws-cdk-lib/aws-ecs';
 import * as execa from 'execa';
 import { constants } from './constants';
 import { MinecraftEditionConfig, StackConfig } from './types';

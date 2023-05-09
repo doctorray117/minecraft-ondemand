@@ -16,7 +16,7 @@ import {
 import { Construct } from 'constructs';
 import { constants } from './constants';
 import { CWGlobalResourcePolicy } from './cw-global-resource-policy';
-import { RetentionDays } from 'aws-cdk-lib/lib/aws-logs';
+import { RetentionDays } from 'aws-cdk-lib/aws-logs';
 import { StackConfig } from './types';
 
 interface DomainStackProps extends StackProps {
