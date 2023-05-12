@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="layer">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/cdk/node_modules/aws-cdk-lib/lambda-layer-awscli/lib/layer.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
