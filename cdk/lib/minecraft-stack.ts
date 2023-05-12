@@ -1,16 +1,16 @@
 import * as path from 'path';
 import {
-    Stack,
-    StackProps,
+    Arn,
+    ArnFormat,
     aws_ec2 as ec2,
+    aws_ecs as ecs,
     aws_efs as efs,
     aws_iam as iam,
-    aws_ecs as ecs,
     aws_logs as logs,
     aws_sns as sns,
     RemovalPolicy,
-    Arn,
-    ArnFormat,
+    Stack,
+    StackProps,
 } from 'aws-cdk-lib';
 import {Construct} from 'constructs';
 import {constants} from './constants';
@@ -18,6 +18,7 @@ import {SSMParameterReader} from './ssm-parameter-reader';
 import {StackConfig} from './types';
 import {getMinecraftServerConfig, isDockerInstalled} from './util';
 import {Platform} from 'aws-cdk-lib/aws-ecr-assets';
+import {AmazonLinuxCpuType, InstanceClass, InstanceSize} from "aws-cdk-lib/aws-ec2";
 
 interface MinecraftStackProps extends StackProps {
     config: Readonly<StackConfig>;
@@ -58,8 +59,34 @@ export class MinecraftStack extends Stack {
             }
         );
 
+        const ec2SecurityGroup = new ec2.SecurityGroup(
+            this,
+            'EC2SecurityGroup',
+            {
+                vpc,
+                description: 'Security group for Minecraft Work Instance',
+            }
+        );
+        const ec2Role = new iam.Role(this, 'EC2Role', {
+            assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com'),
+            description: 'Minecraft EC2 Work Server role',
+        });
+        const ssmPolicy = iam.ManagedPolicy.fromAwsManagedPolicyName("AmazonSSMManagedInstanceCore");
+        ec2Role.addManagedPolicy(ssmPolicy);
+
+        const ec2Instance = new ec2.Instance(this, 'minecraftWorkServer', {
+            instanceType: ec2.InstanceType.of(InstanceClass.T2, InstanceSize.MICRO),
+            machineImage: ec2.MachineImage.lookup({
+                name: "al2023-ami-2023.*-kernel-6.1-x86_64"
+            }),
+            vpc: vpc,
+            securityGroup: ec2SecurityGroup,
+            role: ec2Role,
+        })
 
         for (const c of config.containerConfigs) {
+
+            // create efs
             const fileSystem = new efs.FileSystem(this, `${c.prefix}FileSystem`, {
                 vpc,
                 removalPolicy: RemovalPolicy.SNAPSHOT,
@@ -98,7 +125,7 @@ export class MinecraftStack extends Stack {
                     }),
                 ],
             });
-
+            efsReadWriteDataPolicy.attachToRole(ec2Role);
             efsReadWriteDataPolicy.attachToRole(ecsTaskRole);
 
             const taskDefinition = new ecs.FargateTaskDefinition(
@@ -191,6 +218,9 @@ export class MinecraftStack extends Stack {
             /* Allow access to EFS from Fargate service security group */
             fileSystem.connections.allowDefaultPortFrom(
                 minecraftServerService.connections
+            );
+            fileSystem.connections.allowDefaultPortFrom(
+                ec2Instance.connections
             );
 
             let snsTopicArn = '';
