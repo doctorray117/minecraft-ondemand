@@ -80,9 +80,10 @@ export class MinecraftStack extends Stack {
                 name: "al2023-ami-2023.*-kernel-6.1-x86_64"
             }),
             vpc: vpc,
+            vpcSubnets: {subnetType: ec2.SubnetType.PUBLIC},
             securityGroup: ec2SecurityGroup,
             role: ec2Role,
-        })
+        });
 
         for (const c of config.containerConfigs) {
 
