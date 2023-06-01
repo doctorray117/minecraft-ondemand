@@ -1,5 +1,5 @@
-import type { Protocol } from 'aws-cdk-lib/lib/aws-ecs';
-import type { Port } from 'aws-cdk-lib/lib/aws-ec2';
+import type { Protocol } from 'aws-cdk-lib/aws-ecs';
+import type { Port } from 'aws-cdk-lib/aws-ec2';
 
 interface TwilioConfig {
   /**
