@@ -63,6 +63,10 @@ You may be asked to install a package like aws-cdk, this is fine to say yes to. 
 
 ### 5. Customize your server
 
+After deploying go to the hosted zone you firstly created for your domain and click on `View query logging configuration` and select the `/aws/route53/{subdomain.domain}` log group. 
+
+### 6. Customize your server
+
 After you've launched your minecraft server the first time and you've waited for it to finishing generating the world with all defaults, you'll need to get in, make yourself an op, tweak settings, etc.  There are several ways to do this, many of which are outlined at [Usage and Customization] on the main page.
 
 ## Additional Configuration

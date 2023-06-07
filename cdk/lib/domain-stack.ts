@@ -68,25 +68,8 @@ export class DomainStack extends Stack {
       domainName: config.domainName,
     });
 
-    const subdomainHostedZone = new route53.HostedZone(
-      this,
-      'SubdomainHostedZone',
-      {
-        zoneName: subdomain,
-        queryLogsLogGroupArn: queryLogGroup.logGroupArn,
-      }
-    );
-
     /* Resource policy for CloudWatch Logs is needed before the zone can be created */
-    subdomainHostedZone.node.addDependency(cloudwatchLogResourcePolicy);
-    /* Ensure we hvae an existing hosted zone before creating our delegated zone */
-    subdomainHostedZone.node.addDependency(rootHostedZone);
-
-    const nsRecord = new route53.NsRecord(this, 'NSRecord', {
-      zone: rootHostedZone,
-      values: subdomainHostedZone.hostedZoneNameServers as string[],
-      recordName: subdomain,
-    });
+    rootHostedZone.node.addDependency(cloudwatchLogResourcePolicy);
 
     const aRecord = new route53.ARecord(this, 'ARecord', {
       target: {
@@ -103,11 +86,11 @@ export class DomainStack extends Stack {
        */
       ttl: Duration.seconds(30),
       recordName: subdomain,
-      zone: subdomainHostedZone,
+      zone: rootHostedZone,
     });
 
     /* Set dependency on A record to ensure it is removed first on deletion */
-    aRecord.node.addDependency(subdomainHostedZone);
+    aRecord.node.addDependency(rootHostedZone);
 
     const launcherLambda = new lambda.Function(this, 'LauncherLambda', {
       code: lambda.Code.fromAsset(path.resolve(__dirname, '../../lambda')),
@@ -137,10 +120,17 @@ export class DomainStack extends Stack {
     /**
      * Create our log subscription filter to catch any log events containing
      * our subdomain name and send them to our launcher lambda.
+     *
+     * Java supports SRV records so we can create a more precise filter
+     * unfortunately Minecraft Bedrock does not support this yet.
      */
+    const dnsFilterPattern = config.minecraftEdition === "java"
+    ? `_minecraft._tcp.${config.subdomainPart}.${config.domainName}`
+    : subdomain;
+
     queryLogGroup.addSubscriptionFilter('SubscriptionFilter', {
       destination: new logDestinations.LambdaDestination(launcherLambda),
-      filterPattern: logs.FilterPattern.anyTerm(subdomain),
+      filterPattern: logs.FilterPattern.anyTerm(dnsFilterPattern),
     });
 
     /**
@@ -151,7 +141,7 @@ export class DomainStack extends Stack {
       allowedPattern: '.*',
       description: 'Hosted zone ID for minecraft server',
       parameterName: constants.HOSTED_ZONE_SSM_PARAMETER,
-      stringValue: subdomainHostedZone.hostedZoneId,
+      stringValue: rootHostedZone.hostedZoneId,
     });
 
     /**
