@@ -9,6 +9,7 @@
     "build": "npx aws-cdk bootstrap",
     "deploy": "npx aws-cdk deploy --all",
     "destroy": "npx aws-cdk destroy --all",
+    "typecheck": "tsc --noEmit --watch",
     "diff": "npx aws-cdk diff"
   },
   "devDependencies": {
@@ -19,7 +20,7 @@
     "typescript": "~3.9.7"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.0.0-rc.14",
+    "aws-cdk-lib": "^2.89.0",
     "constructs": "^10.0.0",
     "execa": "^5.1.1",
     "source-map-support": "^0.5.16"
