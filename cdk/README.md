@@ -93,8 +93,9 @@ set in `.env`.
 | TWILIO_AUTH_CODE              | Twilio auth code.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | --                   |
 | DEBUG                         | Enables debug mode.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | --                   |
 | CDK_NEW_BOOTSTRAP             | Addresses issue for some users relating to AWS move to bootstrap v2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | `1`                  |
+| USE_GEYSER             | Allows watchdog to listen to bedrock port if using geyser | `false`                  |
 
-## Cleanup
+## **Cleanup**
 
 To remove all of the resources that were deployed on the deploy script run the following command:
 

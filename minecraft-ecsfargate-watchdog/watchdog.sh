@@ -8,6 +8,8 @@
 [ -n "$DNSZONE" ] || { echo "DNSZONE env variable must be set to the Route53 Hosted Zone ID" ; exit 1; }
 [ -n "$STARTUPMIN" ] || { echo "STARTUPMIN env variable not set, defaulting to a 10 minute startup wait" ; STARTUPMIN=10; }
 [ -n "$SHUTDOWNMIN" ] || { echo "SHUTDOWNMIN env variable not set, defaulting to a 20 minute shutdown wait" ; SHUTDOWNMIN=20; }
+[ -n "$GEYSER" ] || { echo "GEYSER env variable not set, defaulting to false" ; GEYSER=false; }
+
 
 function send_notification ()
 {
@@ -113,7 +115,7 @@ then
   done
 fi
 
-if [ "$EDITION" == "bedrock" ]
+if [[ "$EDITION" == "bedrock" || "$GEYSER" == true ]]
 then
   PINGA="\x01" ## uncommitted ping
   PINGB="\x00\x00\x00\x00\x00\x00\x4e\x20" ## time since start in ms.  20 seconds sounds good
@@ -132,10 +134,11 @@ CONNECTED=0
 while [ $CONNECTED -lt 1 ]
 do
   echo Waiting for connection, minute $COUNTER out of $STARTUPMIN...
-  [ "$EDITION" == "java" ] && CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
-  [ "$EDITION" == "bedrock" ] && CONNECTIONS=$((echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
-  [ -n "$CONNECTIONS" ] || CONNECTIONS=0
-  CONNECTED=$(($CONNECTED + $CONNECTIONS))
+  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  [[ "$EDITION" == "bedrock" || "$GEYSER" == true ]] && CONNECTIONS_BEDROCK=$( (echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
+  [ -n "$CONNECTIONS_JAVA" ] || CONNECTIONS_JAVA=0
+  [ -n "$CONNECTIONS_BEDROCK" ] || CONNECTIONS_BEDROCK=0
+  CONNECTED=$(($CONNECTED + $CONNECTIONS_JAVA + $CONNECTIONS_BEDROCK))
   COUNTER=$(($COUNTER + 1))
   if [ $CONNECTED -gt 0 ] ## at least one active connection detected, break out of loop
   then
@@ -154,10 +157,11 @@ echo "We believe a connection has been made, switching to shutdown watcher."
 COUNTER=0
 while [ $COUNTER -le $SHUTDOWNMIN ]
 do
-  [ "$EDITION" == "java" ] && CONNECTIONS=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
-  [ "$EDITION" == "bedrock" ] && CONNECTIONS=$((echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
-  [ -n "$CONNECTIONS" ] || CONNECTIONS=0
-  if [ $CONNECTIONS -lt 1 ]
+  [ "$EDITION" == "java" ] && CONNECTIONS_JAVA=$(netstat -atn | grep :25565 | grep ESTABLISHED | wc -l)
+  [[ "$EDITION" == "bedrock" || "$GEYSER" == true ]] && CONNECTIONS_BEDROCK=$( (echo -en "$BEDROCKPING" && sleep 1) | ncat -w 1 -u 127.0.0.1 19132 | cut -c34- | awk -F\; '{ print $5 }')
+  [ -n "$CONNECTIONS_JAVA" ] || CONNECTIONS_JAVA=0
+  [ -n "$CONNECTIONS_BEDROCK" ] || CONNECTIONS_BEDROCK=0
+  if [ $CONNECTIONS_JAVA -lt 1 ] && [ $CONNECTIONS_BEDROCK -lt 1 ]
   then
     echo "No active connections detected, $COUNTER out of $SHUTDOWNMIN minutes..."
     COUNTER=$(($COUNTER + 1))

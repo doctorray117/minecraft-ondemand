@@ -145,6 +145,14 @@ export interface StackConfig {
    * - CloudWatch Logs for the `minecraft-ecsfargate-watchdog` ECS Container
    */
   debug: boolean;
+  /**
+   * Setting to `true` will allow the watchdog to listen for geyser connections.
+   * Make sure to set `BEDROCK_SERVER_PORT` to your geyser port if it's not the default (`19132`).
+   *
+   * @default false
+   * @example true
+   */
+  useGeyser: boolean;
 }
 
 export interface MinecraftEditionConfig {

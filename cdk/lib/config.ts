@@ -44,4 +44,5 @@ export const resolveConfig = (): StackConfig => ({
     authCode: process.env.TWILIO_AUTH_CODE || '',
   },
   debug: stringAsBoolean(process.env.DEBUG) || false,
+  useGeyser: stringAsBoolean(process.env.USE_GEYSER) || false,
 });
